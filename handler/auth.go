@@ -46,8 +46,8 @@ func getUserByUsername(u string) (*model.User, error) {
 // Login get user and password
 func Login(c *fiber.Ctx) error {
 	type LoginInput struct {
-		Identity string `json:"identity"`
-		Password string `json:"password"`
+		Identity string `json:"identity" xml:"identity" form:"identity"`
+		Password string `json:"password" xml:"password" form:"password"`
 	}
 	type UserData struct {
 		ID       uint   `json:"id"`

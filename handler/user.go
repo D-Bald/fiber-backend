@@ -45,6 +45,17 @@ func validUser(id string, p string) bool {
 	return true
 }
 
+// GetUsers get all Users in DB
+func GetUsers(c *fiber.Ctx) error {
+	db := database.DB
+	var users []model.User
+	db.Find(&users)
+	if users == nil {
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found.", "data": nil})
+	}
+	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
+}
+
 // GetUser get a user
 func GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
@@ -54,14 +65,14 @@ func GetUser(c *fiber.Ctx) error {
 	if user.Username == "" {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No user found with ID", "data": nil})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Product found", "data": user})
+	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
 }
 
 // CreateUser new user
 func CreateUser(c *fiber.Ctx) error {
 	type NewUser struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
+		Username string `json:"username" xml:"username" form:"username"`
+		Email    string `json:"email" xml:"email" form:"email"`
 	}
 
 	db := database.DB
@@ -93,7 +104,7 @@ func CreateUser(c *fiber.Ctx) error {
 // UpdateUser update user
 func UpdateUser(c *fiber.Ctx) error {
 	type UpdateUserInput struct {
-		Names string `json:"names"`
+		Names string `json:"names" xml:"names" form:"names"`
 	}
 	var uui UpdateUserInput
 	if err := c.BodyParser(&uui); err != nil {
@@ -119,7 +130,7 @@ func UpdateUser(c *fiber.Ctx) error {
 // DeleteUser delete user
 func DeleteUser(c *fiber.Ctx) error {
 	type PasswordInput struct {
-		Password string `json:"password"`
+		Password string `json:"password" xml:"password" form:"password"`
 	}
 	var pi PasswordInput
 	if err := c.BodyParser(&pi); err != nil {
