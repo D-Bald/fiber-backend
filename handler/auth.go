@@ -61,7 +61,11 @@ func Login(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "data": err})
 	}
+
 	identity := input.Identity
+	if identity == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "No Identity provided on Login"})
+	}
 	pass := input.Password
 
 	email, err := getUserByEmail(identity)

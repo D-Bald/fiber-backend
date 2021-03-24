@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
 
-	"github.com/dgrijalva/jwt-go"
+	// "github.com/dgrijalva/jwt-go" <- Nicht kompatibel mit "github.com/gofiber/jwt/v2", was hier in Tokens aus dem fiber Context verwendet wird.
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,6 +28,7 @@ func validToken(t *jwt.Token, id string) bool {
 	uid := int(claims["user_id"].(float64))
 
 	if uid != n {
+		fmt.Println("ID anders als im Claim")
 		return false
 	}
 
@@ -50,7 +53,7 @@ func GetUsers(c *fiber.Ctx) error {
 	db := database.DB
 	var users []model.User
 	db.Find(&users)
-	if users == nil {
+	if users == nil || len(users) == 0 {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found.", "data": nil})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
@@ -77,9 +80,17 @@ func CreateUser(c *fiber.Ctx) error {
 
 	db := database.DB
 	user := new(model.User)
-	if err := c.BodyParser(user); err != nil {
+
+	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 
+	}
+
+	if u, err := getUserByUsername(user.Username); err == nil && u != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Username already taken"})
+	}
+	if e, err := getUserByEmail(user.Email); err == nil && e != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists"})
 	}
 
 	hash, err := hashPassword(user.Password)
@@ -155,5 +166,10 @@ func DeleteUser(c *fiber.Ctx) error {
 	db.First(&user, id)
 
 	db.Delete(&user)
+	/*
+	 * TO DO: Delete(&user) Setzt nur das Feld 'DeletedAt' auf aktuelle Zeit, behält die User aber in der Datenbank.
+	 * "Gelöschte User" werden jedoch nicht mehr bei GET Anfragen ausgegeben! => Hier: Lieber ganz aus der D löschen!
+	 * Zum Beispiel: nicht gorm.Model im model embedden => 'DeletedAt' nicht enthalten.
+	 */
 	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": nil})
 }
