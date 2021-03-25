@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// GetAllContentEntries query all Content Entries
+// GetAll query all Content Entries
 func GetAllContentEntries(c *fiber.Ctx) error {
 	db := database.DB
 	var entries []model.Content
@@ -39,7 +39,7 @@ func CreateContent(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": content})
 }
 
-// DeleteConteent delete content
+// DeleteContent delete content
 func DeleteContent(c *fiber.Ctx) error {
 	id := c.Params("id")
 	db := database.DB

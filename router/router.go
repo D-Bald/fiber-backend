@@ -32,4 +32,11 @@ func SetupRoutes(app *fiber.App) {
 	content.Get("/:id", handler.GetContent)
 	content.Post("/", middleware.Protected(), handler.CreateContent)
 	content.Delete("/:id", middleware.Protected(), handler.DeleteContent)
+
+	// Event
+	event := api.Group("/event")
+	event.Get("/", handler.GetAllEvents)
+	event.Get("/:id", handler.GetEvent)
+	event.Post("/", middleware.Protected(), handler.CreateEvent)
+	event.Delete("/:id", middleware.Protected(), handler.CreateEvent)
 }
