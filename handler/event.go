@@ -8,7 +8,7 @@ import (
 )
 
 // GetAll query all Event Entries
-func GetAll(c *fiber.Ctx) error {
+func GetAllEvents(c *fiber.Ctx) error {
 	db := database.DB
 	var entries []model.Event
 	db.Find(&entries)
