@@ -9,6 +9,7 @@ import (
 // Event struct
 type Event struct {
 	gorm.Model
-	BaseModel
-	Date time.Time `gorm:"not null" json:"date"`
+	Title       string    `gorm:"not null" json:"title"`
+	Description string    `json:"description"`
+	Date        time.Time `gorm:"not null" json:"date"`
 }

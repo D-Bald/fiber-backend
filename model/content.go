@@ -7,6 +7,7 @@ import (
 // Content struct
 type Content struct {
 	gorm.Model
-	BaseModel
-	Text string `gorm:"not null" json:"text"`
+	Title       string `gorm:"not null" json:"title"`
+	Description string `json:"description"`
+	Text        string `gorm:"not null" json:"text"`
 }
