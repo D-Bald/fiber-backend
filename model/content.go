@@ -9,5 +9,5 @@ type Content struct {
 	gorm.Model
 	Title       string `gorm:"not null" json:"title"`
 	Description string `json:"description"`
-	Text        string `gorm:"not null" json:"text"`
+	Text        string `json:"text"`
 }
