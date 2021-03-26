@@ -1,27 +1,46 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/D-Bald/fiber-backend/model"
+	"github.com/D-Bald/fiber-backend/config"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// ConnectDB connect to db
-func ConnectDB() {
-	var err error
-	// p := config.Config("DB_PORT")
-	// port, err := strconv.ParseUint(p, 10, 32)
+type MongoInstance struct {
+	Client *mongo.Client
+	Db     *mongo.Database
+	Ctx    context.Context
+}
 
-	// DB, err = gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.Config("DB_HOST"), port, config.Config("DB_USER"), config.Config("DB_PASSWORD"), config.Config("DB_NAME")))
-	DB, err = gorm.Open("sqlite3", "test.db")
+var Mg MongoInstance
+
+// Database settings (insert your own database name and connection URI)
+var dbName = config.Config("DB_NAME")
+var mongoURI = fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", config.Config("DB_USER"), config.Config("DB_USER_PASSWORD"), dbName)
+
+func Connect() error {
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	db := client.Database(dbName)
+
 	if err != nil {
-		panic("failed to connect database")
+		return err
 	}
 
-	fmt.Println("Connection Opened to Database")
-	DB.AutoMigrate(&model.Content{}, &model.Event{}, &model.User{})
-	fmt.Println("Database Migrated")
+	Mg = MongoInstance{
+		Client: client,
+		Db:     db,
+		Ctx:    ctx,
+	}
+
+	return nil
 }

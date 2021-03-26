@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	// "github.com/dgrijalva/jwt-go" <- Nicht kompatibel mit "github.com/gofiber/jwt/v2", was hier in Tokens aus dem fiber Context verwendet wird.
 	"github.com/form3tech-oss/jwt-go"
@@ -36,10 +39,15 @@ func validToken(t *jwt.Token, id string) bool {
 }
 
 func validUser(id string, p string) bool {
-	db := database.DB
+	docID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return false
+	}
+	db := database.Mg.Db
+	col := db.Collection("Users")
 	var user model.User
-	db.First(&user, id)
-	if user.Username == "" {
+	err = col.FindOne(context.TODO(), bson.M{"_id": docID}).Decode(&user)
+	if err != nil || user.Username == "" {
 		return false
 	}
 	if !CheckPasswordHash(p, user.Password) {
@@ -50,7 +58,7 @@ func validUser(id string, p string) bool {
 
 // GetUsers get all Users in DB
 func GetUsers(c *fiber.Ctx) error {
-	db := database.DB
+	db := database.Mg.Db
 	var users []model.User
 	db.Find(&users)
 	if users == nil || len(users) == 0 {
@@ -61,11 +69,15 @@ func GetUsers(c *fiber.Ctx) error {
 
 // GetUser get a user
 func GetUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	db := database.DB
+	docID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": nil})
+	}
+	db := database.Mg.Db
+	col := db.Collection("users")
 	var user model.User
-	db.Find(&user, id)
-	if user.Username == "" {
+	err = col.FindOne(context.TODO(), bson.M{"_id": docID}).Decode(&user)
+	if err != nil || user.Username == "" {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No user found with ID", "data": nil})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
@@ -74,11 +86,11 @@ func GetUser(c *fiber.Ctx) error {
 // CreateUser new user
 func CreateUser(c *fiber.Ctx) error {
 	type NewUser struct {
-		Username string `json:"username" xml:"username" form:"username"`
-		Email    string `json:"email" xml:"email" form:"email"`
+		ID       primitive.ObjectID `json:"id" xml:"id" form:"id"`
+		Username string             `json:"username" xml:"username" form:"username"`
+		Email    string             `json:"email" xml:"email" form:"email"`
 	}
 
-	db := database.DB
 	user := new(model.User)
 
 	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" {
@@ -100,7 +112,10 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	user.Password = hash
-	if err := db.Create(&user).Error; err != nil {
+
+	db := database.Mg.Db
+	col := db.Collection("users")
+	if _, err := col.InsertOne(context.TODO(), &user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
 	}
 
@@ -128,7 +143,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
-	db := database.DB
+	db := database.Mg.Db
 	var user model.User
 
 	db.First(&user, id)
@@ -160,7 +175,7 @@ func DeleteUser(c *fiber.Ctx) error {
 
 	}
 
-	db := database.DB
+	db := database.Mg.Db
 	var user model.User
 
 	db.First(&user, id)

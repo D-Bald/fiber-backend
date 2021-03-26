@@ -12,13 +12,15 @@ import (
 )
 
 func main() {
+	// Create a Fiber app
 	app := fiber.New()
 	app.Use(cors.New())
 
-	database.ConnectDB()
+	// Connect to the database
+	if err := database.Connect(); err != nil {
+		log.Fatal(err)
+	}
 
 	router.SetupRoutes(app)
 	log.Fatal(app.Listen(":3000"))
-
-	defer database.DB.Close()
 }

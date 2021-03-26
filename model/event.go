@@ -1,13 +1,17 @@
 package model
 
 import (
-	"github.com/jinzhu/gorm"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Event struct
 type Event struct {
-	gorm.Model
-	Title       string `gorm:"not null" json:"title"`
-	Description string `json:"description"`
-	Date        string `gorm:"not null" json:"date"` // time.time muss man parsen.
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	CreatedAt   time.Time          `bson:"created_at"`
+	UpdatedAt   time.Time          `bson:"updated_at"`
+	Title       string             `bson:"title" json:"title"`
+	Description string             `bson:"description,omitempty" json:"description"`
+	Date        string             `bson:"date" json:"date"` // time.time muss man parsen.
 }
