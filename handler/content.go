@@ -9,7 +9,7 @@ import (
 
 // GetAll query all Content Entries
 func GetAllContentEntries(c *fiber.Ctx) error {
-	db := database.DB
+	db := database.Mg.Db
 	var entries []model.Content
 	db.Find(&entries)
 	return c.JSON(fiber.Map{"status": "success", "message": "All Content Entries", "data": entries})
@@ -18,7 +18,7 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 // GetContent query content
 func GetContent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	db := database.DB
+	db := database.Mg.Db
 	var content model.Content
 	db.Find(&content, id)
 	if content.Title == "" {
@@ -30,7 +30,7 @@ func GetContent(c *fiber.Ctx) error {
 
 // CreateContent new content
 func CreateContent(c *fiber.Ctx) error {
-	db := database.DB
+	db := database.Mg.Db
 	content := new(model.Content)
 	if err := c.BodyParser(content); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create content", "data": err})
@@ -42,7 +42,7 @@ func CreateContent(c *fiber.Ctx) error {
 // DeleteContent delete content
 func DeleteContent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	db := database.DB
+	db := database.Mg.Db
 
 	var content model.Content
 	db.First(&content, id)

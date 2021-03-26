@@ -7,7 +7,7 @@ import (
 )
 
 // Content   struct
-type Conten  t struct {
+type Content struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	CreatedAt 	time.Time          `bson:"created_at"`
 	UpdatedAt 	time.Time          `bson:"updated_at"`

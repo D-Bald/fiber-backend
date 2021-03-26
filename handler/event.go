@@ -9,7 +9,7 @@ import (
 
 // GetAll query all Event Entries
 func GetAllEvents(c *fiber.Ctx) error {
-	db := database.DB
+	db := database.Mg.Db
 	var entries []model.Event
 	db.Find(&entries)
 	return c.JSON(fiber.Map{"status": "success", "message": "All Event Entries", "data": entries})
@@ -18,7 +18,7 @@ func GetAllEvents(c *fiber.Ctx) error {
 // GetEvent query event
 func GetEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	db := database.DB
+	db := database.Mg.Db
 	var event model.Event
 	db.Find(&event, id)
 	if event.Title == "" {
@@ -30,7 +30,7 @@ func GetEvent(c *fiber.Ctx) error {
 
 // CreateEvent new event
 func CreateEvent(c *fiber.Ctx) error {
-	db := database.DB
+	db := database.Mg.Db
 	event := new(model.Event)
 	if err := c.BodyParser(event); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create event", "data": err})
@@ -42,7 +42,7 @@ func CreateEvent(c *fiber.Ctx) error {
 // DeleteEvent delete event
 func DeleteEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	db := database.DB
+	db := database.Mg.Db
 
 	var event model.Event
 	db.First(&event, id)

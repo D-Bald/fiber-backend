@@ -9,6 +9,7 @@ import (
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	// "github.com/dgrijalva/jwt-go" <- Nicht kompatibel mit "github.com/gofiber/jwt/v2", was hier in Tokens aus dem fiber Context verwendet wird.
 	"github.com/form3tech-oss/jwt-go"
@@ -43,8 +44,7 @@ func validUser(id string, p string) bool {
 	if err != nil {
 		return false
 	}
-	db := database.Mg.Db
-	col := db.Collection("Users")
+	col := database.Mg.Db.Collection("Users")
 	var user model.User
 	err = col.FindOne(context.TODO(), bson.M{"_id": docID}).Decode(&user)
 	if err != nil || user.Username == "" {
@@ -56,12 +56,56 @@ func validUser(id string, p string) bool {
 	return true
 }
 
+// Filter Users with given Filter
+func filterUsers(filter interface{}) ([]*model.User, error) {
+	// A slice of tasks for storing the decoded documents
+	var users []*model.User
+	ctx := context.TODO()
+	cursor, err := database.Mg.Db.Collection("User").Find(ctx, filter)
+	if err != nil {
+		return users, err
+	}
+
+	for cursor.Next(ctx) {
+		var u model.User
+		err := cursor.Decode(&u)
+		if err != nil {
+			return users, err
+		}
+
+		users = append(users, &u)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return users, err
+	}
+
+	// once exhausted, close the cursor
+	cursor.Close(ctx)
+
+	if len(users) == 0 {
+		return users, mongo.ErrNoDocuments
+	}
+
+	return users, nil
+}
+
+// Find a single User by filter
+func findUser(filter interface{}) (*model.User, error) {
+	// A slice of tasks for storing the decoded documents
+	var user *model.User
+	ctx := context.TODO()
+	err := database.Mg.Db.Collection("User").FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // GetUsers get all Users in DB
 func GetUsers(c *fiber.Ctx) error {
-	db := database.Mg.Db
-	var users []model.User
-	db.Find(&users)
-	if users == nil || len(users) == 0 {
+	users, err := filterUsers(bson.M{})
+	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found.", "data": nil})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
@@ -69,14 +113,11 @@ func GetUsers(c *fiber.Ctx) error {
 
 // GetUser get a user
 func GetUser(c *fiber.Ctx) error {
-	docID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	userID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": nil})
 	}
-	db := database.Mg.Db
-	col := db.Collection("users")
-	var user model.User
-	err = col.FindOne(context.TODO(), bson.M{"_id": docID}).Decode(&user)
+	user, err := findUser(bson.M{"_id": userID})
 	if err != nil || user.Username == "" {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No user found with ID", "data": nil})
 	}
@@ -94,15 +135,15 @@ func CreateUser(c *fiber.Ctx) error {
 	user := new(model.User)
 
 	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 
 	}
 
-	if u, err := getUserByUsername(user.Username); err == nil && u != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Username already taken"})
+	if _, err := findUser(bson.M{"username": user.Username}); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken"})
 	}
-	if e, err := getUserByEmail(user.Email); err == nil && e != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists"})
+	if _, err := findUser(bson.M{"email": user.Email}); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists"})
 	}
 
 	hash, err := hashPassword(user.Password)
@@ -113,8 +154,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	user.Password = hash
 
-	db := database.Mg.Db
-	col := db.Collection("users")
+	col := database.Mg.Db.Collection("users")
 	if _, err := col.InsertOne(context.TODO(), &user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
 	}
@@ -134,23 +174,28 @@ func UpdateUser(c *fiber.Ctx) error {
 	}
 	var uui UpdateUserInput
 	if err := c.BodyParser(&uui); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
 	if !validToken(token, id) {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
-
+	userID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": nil})
+	}
 	db := database.Mg.Db
-	var user model.User
 
-	db.First(&user, id)
-	user.Names = uui.Names
-	db.Save(&user)
-
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": user})
+	// Update User with given ID and sets Field Values for names
+	result, err := database.Mg.Db.Collection("users").UpdateOne(
+		context.TODO(),
+		bson.M{"_id": userID},
+		bson.D{
+			{"$set", bson.D{{"names", uui.Names}}},
+		})
+	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": result})
 }
 
 // DeleteUser delete user
@@ -160,18 +205,18 @@ func DeleteUser(c *fiber.Ctx) error {
 	}
 	var pi PasswordInput
 	if err := c.BodyParser(&pi); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
 	if !validToken(token, id) {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 
 	}
 
 	if !validUser(id, pi.Password) {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
 
 	}
 
