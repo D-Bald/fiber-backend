@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
@@ -40,13 +41,8 @@ func validToken(t *jwt.Token, id string) bool {
 }
 
 func validUser(id string, p string) bool {
-	docID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return false
-	}
-	col := database.Mg.Db.Collection("Users")
-	var user model.User
-	err = col.FindOne(context.TODO(), bson.M{"_id": docID}).Decode(&user)
+	userID, _ := primitive.ObjectIDFromHex(id)
+	user, err := findUser(bson.M{"_id": userID})
 	if err != nil || user.Username == "" {
 		return false
 	}
@@ -134,9 +130,8 @@ func CreateUser(c *fiber.Ctx) error {
 
 	user := new(model.User)
 
-	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" {
+	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" || user.Password == "" {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
-
 	}
 
 	if _, err := findUser(bson.M{"username": user.Username}); err != nil {
@@ -153,6 +148,9 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	user.Password = hash
+	user.ID = primitive.NewObjectID()
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
 	col := database.Mg.Db.Collection("users")
 	if _, err := col.InsertOne(context.TODO(), &user); err != nil {
@@ -160,6 +158,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	newUser := NewUser{
+		ID:       user.ID,
 		Email:    user.Email,
 		Username: user.Username,
 	}
@@ -176,25 +175,33 @@ func UpdateUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&uui); err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
+
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
 	if !validToken(token, id) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
+
 	userID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": nil})
 	}
-	db := database.Mg.Db
 
-	// Update User with given ID and sets Field Values for names
-	result, err := database.Mg.Db.Collection("users").UpdateOne(
-		context.TODO(),
-		bson.M{"_id": userID},
-		bson.D{
-			{"$set", bson.D{{"names", uui.Names}}},
-		})
+	// Update User with given ID: sets Field Values for "names" and "updatet_at"
+	filter := bson.M{"_id": userID}
+	update := bson.D{
+		{"$set", bson.D{
+			{"names", uui.Names},
+		}},
+		{"$currentDate", bson.D{
+			{"updated_at", true},
+		}},
+	}
+	result, err := database.Mg.Db.Collection("users").UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": nil})
+	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": result})
 }
 
@@ -207,29 +214,22 @@ func DeleteUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&pi); err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
+
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
 	if !validToken(token, id) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
-
 	}
 
 	if !validUser(id, pi.Password) {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
-
 	}
-
-	db := database.Mg.Db
-	var user model.User
-
-	db.First(&user, id)
-
-	db.Delete(&user)
-	/*
-	 * TO DO: Delete(&user) Setzt nur das Feld 'DeletedAt' auf aktuelle Zeit, behält die User aber in der Datenbank.
-	 * "Gelöschte User" werden jedoch nicht mehr bei GET Anfragen ausgegeben! => Hier: Lieber ganz aus der D löschen!
-	 * Zum Beispiel: nicht gorm.Model im model embedden => 'DeletedAt' nicht enthalten.
-	 */
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": nil})
+	userID, _ := primitive.ObjectIDFromHex(id)
+	filter := bson.M{"_id": userID}
+	result, err := database.Mg.Db.Collection("users").DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "data": nil})
+	}
+	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": result})
 }

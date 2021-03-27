@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
-	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,27 +20,21 @@ func CheckPasswordHash(password, hash string) bool {
 }
 
 func getUserByEmail(e string) (*model.User, error) {
-	db := database.Mg.Db
-	var user model.User
-	if err := db.Where(&model.User{Email: e}).Find(&user).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
+	filter := bson.M{"email": e}
+	user, err := findUser(filter)
+	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 func getUserByUsername(u string) (*model.User, error) {
-	db := database.Mg.Db
-	var user model.User
-	if err := db.Where(&model.User{Username: u}).Find(&user).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
-		}
+	filter := bson.M{"username": u}
+	user, err := findUser(filter)
+	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 // Login get user and password
@@ -50,10 +44,10 @@ func Login(c *fiber.Ctx) error {
 		Password string `json:"password" xml:"password" form:"password"`
 	}
 	type UserData struct {
-		ID       uint   `json:"id"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		ID       primitive.ObjectID `json:"id"`
+		Username string             `json:"username"`
+		Email    string             `json:"email"`
+		Password string             `json:"password"`
 	}
 	var input LoginInput
 	var ud UserData
@@ -68,18 +62,12 @@ func Login(c *fiber.Ctx) error {
 	}
 	pass := input.Password
 
-	email, err := getUserByEmail(identity)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Error on email", "data": err})
-	}
+	email, _ := getUserByEmail(identity)
 
-	user, err := getUserByUsername(identity)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Error on username", "data": err})
-	}
+	user, _ := getUserByUsername(identity)
 
 	if email == nil && user == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "User not found", "data": err})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "User not found", "data": nil})
 	}
 
 	if email == nil {
