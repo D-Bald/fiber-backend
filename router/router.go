@@ -10,9 +10,8 @@ import (
 
 // SetupRoutes setup router api
 func SetupRoutes(app *fiber.App) {
-	// Middleware
+	// API Route
 	api := app.Group("/api", logger.New())
-	api.Get("/", handler.Hello)
 
 	// Auth
 	auth := api.Group("/auth")
@@ -26,10 +25,23 @@ func SetupRoutes(app *fiber.App) {
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
+	// ContentTypes
+	contentTypes := api.Group("/contenttypes", middleware.Protected())
+	contentTypes.Get("/", handler.GetAllContentTypes)
+	contentTypes.Get("/:id", handler.GetContentType)
+	contentTypes.Post("/", handler.CreateContentType)
+	contentTypes.Delete("/:id", handler.DeleteContentType)
+
 	// Content
-	content := api.Group("/content")
+	content := api.Group("/:type", func(c *fiber.Ctx) error { //'type' must be a Collection name
+		if handler.ValidCollection(c.Params("type")) {
+			return c.Next()
+		} else {
+			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your input for Content Type Collection", "data": nil})
+		}
+	})
 	content.Get("/", handler.GetAllContentEntries)
 	content.Get("/:id", handler.GetContent)
-	content.Post("/", middleware.Protected(), handler.CreateContent)
-	content.Delete("/:id", middleware.Protected(), handler.DeleteContent)
+	content.Post("/", middleware.Protected(), handler.CreateContent) // Must be changed, if non-users should be able to leave Comments. || 'Comments' API?
+	content.Delete("(/:id", middleware.Protected(), handler.DeleteContent)
 }

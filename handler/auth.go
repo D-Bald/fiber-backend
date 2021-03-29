@@ -4,38 +4,11 @@ import (
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
-	"github.com/D-Bald/fiber-backend/model"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
 )
-
-// CheckPasswordHash compare password with hash
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-func getUserByEmail(e string) (*model.User, error) {
-	filter := bson.M{"email": e}
-	user, err := findUser(filter)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func getUserByUsername(u string) (*model.User, error) {
-	filter := bson.M{"username": u}
-	user, err := findUser(filter)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
 
 // Login get user and password
 func Login(c *fiber.Ctx) error {
@@ -86,7 +59,7 @@ func Login(c *fiber.Ctx) error {
 		}
 	}
 
-	if !CheckPasswordHash(pass, ud.Password) {
+	if !checkPasswordHash(pass, ud.Password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Invalid password", "data": nil})
 	}
 
