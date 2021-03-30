@@ -3,7 +3,7 @@
 
 |Method|Resource|Description|
 |------|--------|-----------|
-|'GET'|'/api/sample|Health Check|
+|`GET`|`/api/sample`|Health Check|
 
 ## To Do:
  - Content Handler allgemein machen:
