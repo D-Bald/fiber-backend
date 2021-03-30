@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/D-Bald/fiber-backend/database"
+	"github.com/D-Bald/fiber-backend/handler"
 	"github.com/D-Bald/fiber-backend/router"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,9 @@ func main() {
 	if err := database.Connect(); err != nil {
 		log.Fatal(err)
 	}
+
+	//initialise Database
+	handler.InitContentTypes()
 
 	router.SetupRoutes(app)
 	log.Fatal(app.Listen(":3000"))

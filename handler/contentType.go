@@ -35,7 +35,8 @@ var (
 	}
 )
 
-func initContentTypes() error {
+func InitContentTypes() error {
+	// TODO
 	// same Code as in CreateContentType but with var "blogpost" and "event"
 	err := new(error)
 	return *err
@@ -100,7 +101,7 @@ func GetContentType(c *fiber.Ctx) error {
 	filter := bson.D{{Key: "_id", Value: typeID}}
 	ct, err := getContentType(filter)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
 
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Content Type found", "data": ct})
@@ -115,9 +116,9 @@ func CreateContentType(c *fiber.Ctx) error {
 		Fields     map[string]interface{} `bson:"fields" json:"fields"`
 	}
 
-	var ct *model.ContentType
+	ct := new(model.ContentType)
 	if err := c.BodyParser(ct); err != nil || ct.TypeName == "" || ct.Collection == "" {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'type_name' and 'collection' required", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'type_name' and 'collection' required", "data": err.Error()})
 	}
 
 	// Initialise metadata
@@ -126,7 +127,7 @@ func CreateContentType(c *fiber.Ctx) error {
 	ct.UpdatedAt = time.Now()
 
 	if _, err := database.Mg.Db.Collection("contenttypes").InsertOne(context.TODO(), &ct); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": err.Error()})
 	}
 
 	newCt := NewContentType{
@@ -143,12 +144,12 @@ func DeleteContentType(c *fiber.Ctx) error {
 	typeID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	filter := bson.D{{Key: "_id", Value: typeID}}
 	if _, err := getContentType(filter); err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
 	}
 
 	result, err := database.Mg.Db.Collection("contenttypes").DeleteOne(context.TODO(), filter)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully deleted", "data": result})

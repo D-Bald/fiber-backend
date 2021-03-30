@@ -25,16 +25,19 @@ var mongoURI = fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/
 
 func Connect() error {
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		return err
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err = client.Connect(ctx)
-	db := client.Database(dbName)
-
 	if err != nil {
 		return err
 	}
+
+	db := client.Database(dbName)
 
 	Mg = MongoInstance{
 		Client: client,

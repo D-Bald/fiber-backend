@@ -13,6 +13,11 @@ func SetupRoutes(app *fiber.App) {
 	// API Route
 	api := app.Group("/api", logger.New())
 
+	// Sample Endpoint
+	sample := api.Group("/sample")
+	sample.Get("/", handler.GetSample)
+	sample.Post("/", handler.CreateSample)
+
 	// Auth
 	auth := api.Group("/auth")
 	auth.Post("/login", handler.Login)
@@ -26,7 +31,7 @@ func SetupRoutes(app *fiber.App) {
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
 	// ContentTypes
-	contentTypes := api.Group("/contenttypes", middleware.Protected())
+	contentTypes := api.Group("/contenttypes") // Insert middleware.Protected() here after testing
 	contentTypes.Get("/", handler.GetAllContentTypes)
 	contentTypes.Get("/:id", handler.GetContentType)
 	contentTypes.Post("/", handler.CreateContentType)

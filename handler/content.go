@@ -60,7 +60,7 @@ func GetContent(c *fiber.Ctx) error {
 	filter := bson.D{{Key: "_id", Value: contentID}}
 	content, err := getContent(coll, filter)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": content})
@@ -69,9 +69,9 @@ func GetContent(c *fiber.Ctx) error {
 // CreateContent new content
 // Collection is created by mongoDB automatically on first insert call
 func CreateContent(c *fiber.Ctx) error {
-	var content *model.Content
+	content := new(model.Content)
 	if err := c.BodyParser(content); err != nil || content.Title == "" || content.Fields == nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create content", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create content", "data": err.Error()})
 	}
 
 	// Initialise metadata
@@ -80,7 +80,7 @@ func CreateContent(c *fiber.Ctx) error {
 	content.UpdatedAt = time.Now()
 
 	if _, err := database.Mg.Db.Collection(c.Params("type")).InsertOne(context.TODO(), &content); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": content})
 }
@@ -96,13 +96,14 @@ func DeleteContent(c *fiber.Ctx) error {
 
 	result, err := database.Mg.Db.Collection(coll).DeleteOne(context.TODO(), filter)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content", "data": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully deleted", "data": result})
 }
 
 // not used yet used. Could be used for a GET route, that returns the schema, so that the Client knows, which fields to provide
+// also interesting for validation: https://docs.gofiber.io/guide/validation
 func getSchema(contentType string) (map[string]interface{}, error) {
 	filter := bson.D{{Key: "type_name", Value: contentType}}
 	ct, err := getContentType(filter)
