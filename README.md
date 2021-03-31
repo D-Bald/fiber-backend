@@ -1,11 +1,11 @@
 # Backend for a selfmade CMS using [Fiber](https://github.com/gofiber/fiber)
 
 -------------------------
-- [Inspired by](#inspired-by)
+- [Inspired by...](#inspired-by...)
 - [Available Routes](#available-routes)
 -------------------------
 
-## Inspired by
+## Inspired by...
 - [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
 - [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
 
