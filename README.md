@@ -24,15 +24,17 @@
 
 ## Usage
 
-FILL THIS OUT, WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
+FILL THIS OUT WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
 
-HERE: MONGODB NOT SELF-HOSTET=> URI FOR ATLAS IS HARDCODED EXCEPT USER, DB NAME AND CREDENTIALS
+WATCH OUT: MONGODB NOT SELF-HOSTET => URI FOR ATLAS IS HARDCODED EXCEPT USER, DB NAME AND CREDENTIALS
 
 ## To Do:
- - Content Handler allgemein machen:
-  - model 'ContentType', um eine Collection zu machen, wo dann wiederum Modelle für verschiedene Contenttypen enthalten sind:
-   - Felder: ID, Type, Collection, Status (sowas wie veröffentlicht/unveröffentlicht) []Fields (Beim Ausgeben dann ein eigenes output struct, bei dem zumindest Collection nicht drin ist (wird nicht benötigt, da bei GET Frage mithilfe des Types in der 'ContentType' Collection nachgeschaut werden ka)nn, welche Collection dafür vorgesehen ist: Felder können auch geschachtelt werden) Initialisierung für "Blogposts" und "Events" (Funktion newContentType(typeName, collection, []fields) benutzen?)
 
-
+- Initialization of content types on start up with blogposts and events
 - User Handler:
- - Update not only "names" but also username, password... 
+   - Update not only "names" but also username, password...
+- Content Handler:
+   - add `PATCH` Method for updates
+- Configuration via Config file
+
+
