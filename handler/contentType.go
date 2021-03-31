@@ -71,6 +71,7 @@ func GetAllContentTypes(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content Types found", "data": result})
 	}
+	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
 		var t model.ContentType
@@ -86,8 +87,6 @@ func GetAllContentTypes(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": result})
 	}
 
-	cursor.Close(ctx)
-
 	if len(result) == 0 {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found.", "data": result})
 	}
@@ -98,6 +97,9 @@ func GetAllContentTypes(c *fiber.Ctx) error {
 // GetContent query content
 func GetContentType(c *fiber.Ctx) error {
 	typeID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
+	}
 	filter := bson.D{{Key: "_id", Value: typeID}}
 	ct, err := getContentType(filter)
 	if err != nil {
@@ -142,6 +144,9 @@ func CreateContentType(c *fiber.Ctx) error {
 // DeleteContent delete content
 func DeleteContentType(c *fiber.Ctx) error {
 	typeID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
+	}
 	filter := bson.D{{Key: "_id", Value: typeID}}
 	if _, err := getContentType(filter); err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})

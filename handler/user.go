@@ -68,6 +68,7 @@ func getUsers(filter interface{}) ([]*model.User, error) {
 	if err != nil {
 		return users, err
 	}
+	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
 		var u model.User
@@ -82,9 +83,6 @@ func getUsers(filter interface{}) ([]*model.User, error) {
 	if err := cursor.Err(); err != nil {
 		return users, err
 	}
-
-	// once exhausted, close the cursor
-	cursor.Close(ctx)
 
 	if len(users) == 0 {
 		return users, mongo.ErrNoDocuments

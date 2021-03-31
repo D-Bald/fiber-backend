@@ -1,9 +1,15 @@
-# Backend for a selfmade CMS using Fiber Framework by forking the [auth-jwt recipe](https://github.com/gofiber/recipes/tree/master/auth-jwt)
-## HIER API ENDPOINTS DOKUMENTIEREN!
+# Backend for a selfmade CMS using [Fiber](https://github.com/gofiber/fiber)
+
+## Inspired by
+- [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
+- [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
+
+## Available routes
 
 |Method|Resource|Description|
-|------|--------|-----------|
+|:------|:--------|:-----------|
 |`GET`|`/api/sample`|Health Check|
+|`POST`|`/api/sample`|Creates a new Sample Entry in the 'samples' Collection|
 
 ## To Do:
  - Content Handler allgemein machen:

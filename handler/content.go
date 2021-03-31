@@ -30,6 +30,8 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content found", "data": result})
 	}
+	defer cursor.Close(ctx)
+
 	for cursor.Next(ctx) {
 		var con model.Content
 		err := cursor.Decode(&con)
@@ -44,8 +46,6 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": result})
 	}
 
-	cursor.Close(ctx)
-
 	if len(result) == 0 {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content found.", "data": result})
 	}
@@ -57,6 +57,9 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 func GetContent(c *fiber.Ctx) error {
 	coll := c.Params("type")
 	contentID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
+	}
 	filter := bson.D{{Key: "_id", Value: contentID}}
 	content, err := getContent(coll, filter)
 	if err != nil {
@@ -71,7 +74,7 @@ func GetContent(c *fiber.Ctx) error {
 func CreateContent(c *fiber.Ctx) error {
 	content := new(model.Content)
 	if err := c.BodyParser(content); err != nil || content.Title == "" || content.Fields == nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create content", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
 
 	// Initialise metadata
@@ -89,6 +92,9 @@ func CreateContent(c *fiber.Ctx) error {
 func DeleteContent(c *fiber.Ctx) error {
 	coll := c.Params("type")
 	contentID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
+	}
 	filter := bson.D{{Key: "_id", Value: contentID}}
 	if _, err := getContent(coll, filter); err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": nil})
