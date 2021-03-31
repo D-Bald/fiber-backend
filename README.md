@@ -11,13 +11,12 @@
 
 ## Available routes
 
-| Route           |  Method   | Description |
-| :-------------- | :-------- | :------------------------------------------------------------------------------- |
-| `/api/sample`   | `GET`     | Health Check
-|
-| `/api/sample`   | `POST`    | Creates a new Sample Entry in the `samples` collection. Specify to String Fields in the body |
-| `/api/auth/`    | `POST`    | Sign in with username or email and password. If it's successful, then generates a token |
-| `/api/user/`    | `GET`     | Returns all users present in the collection `users` collection
+|  Route          |  Method   |  Description    |
+|  :------------- | :-------- |  :------------------------------------------------------------------------------- |
+|  `/api/sample`  | `GET`     | Health Check   |
+|  `/api/sample`  | `POST`    | Creates a new Sample Entry in the `samples` collection. Specify to String Fields in the body |
+|  `/api/auth/`   | `POST`    | Sign in with username or email and password. If it's successful, then generates a token |
+|  `/api/user/`   | `GET`     | Returns all users present in the collection `users` collection
 
 
 ## Usage
