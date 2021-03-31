@@ -1,15 +1,31 @@
 # Backend for a selfmade CMS using [Fiber](https://github.com/gofiber/fiber)
 
+-------------------------
+- [Inspired by](#inspired-by)
+- [Available Routes](#available-routes)
+-------------------------
+
 ## Inspired by
 - [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
 - [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
 
 ## Available routes
 
-|Method|Resource|Description|
-|:------|:--------|:-----------|
-|`GET`|`/api/sample`|Health Check|
-|`POST`|`/api/sample`|Creates a new Sample Entry in the 'samples' Collection|
+| Route           |  Method   | Description |
+| :-------------- | :-------- | :------------------------------------------------------------------------------- |
+| `/api/sample`   | `GET`     | Health Check
+|
+|                 | `POST`    | Creates a new Sample Entry in the `samples` collection. Specify to String Fields in the body |
+| --------------- | --------- | -------------------------------------------------------------------------------- |
+| `/api/auth/`    | `POST`    | Sign in with username or email and password. If it's successful, then generates a token |
+| `/api/user/`    | `GET`     | Returns all users present in the collection `users` collection
+
+
+## Usage
+
+FILL THIS OUT, WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
+
+HERE: MONGODB NOT SELF-HOSTET=> URI FOR ATLAS IS HARDCODED EXCEPT USER, DB NAME AND CREDENTIALS
 
 ## To Do:
  - Content Handler allgemein machen:
