@@ -19,6 +19,7 @@
 |  `/api/user/`      |  `GET`    |  Returns all users present in the collection `users` collection |
 |                    |  `POST`   |  Create a new user. You need to specify in the body the following attributes: username, email, password, names  |
 |  `/api/user/:id`   |  `GET`    |  Returns user with `id`-field specified by `:id`
+|
 |                    |  `PATCH`  | HIER WEITER
 |
 |                    |  `DELETE` | HIER WEITER
