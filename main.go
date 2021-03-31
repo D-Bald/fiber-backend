@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//initialise Database
+	// Initialize Database
 	handler.InitContentTypes()
 
 	router.SetupRoutes(app)

@@ -12,7 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// initialise ContentTypes with 'blogposts' and 'events'
+// Initialize Collection ContentTypes with 'blogposts' and 'events'
 var (
 	blogpost = bson.D{
 		{Key: "type_name", Value: "blogpost"},
