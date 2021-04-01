@@ -50,5 +50,5 @@ For self-hosted DB adjust MongoURI [here](https://github.com/D-Bald/fiber-backen
 * Content Handler:
    * add `PATCH` Method to update of any content entry
 * Configuration via Config file
-* API Endpoints for File/Media Uploading
-* Add in API-Table which Routes are protected
+* API Endpoints for File/Media upload
+* API-Table: Add info which Routes are protected
