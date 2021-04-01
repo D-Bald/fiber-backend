@@ -23,9 +23,9 @@
 | `/api/auth/`          | `POST`    | Sign in with username or email (`identity`) and `password`. If it's successful, then generates a token. |
 | `/api/user/`          | `GET`     | Return all users present in the `users` collection.  |
 |                       | `POST`    | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`.   |
-| `/api/user/:id`       | `GET`     | Return user with id `:id`.   |
-|                       | `PATCH`   | Update user with id `:id`. </br> Currently only `names` can be updated. Flexible Update of all fields is planned.   |
-|                       | `DELETE`  | Delete user with id `:id`.</br> Specify user´s password in the request body.   |
+| `/api/user/:id`       | `GET`     | Return user with id `id`.   |
+|                       | `PATCH`   | Update user with id `id`. </br> Currently only `names` can be updated. Flexible Update of all fields is planned.   |
+|                       | `DELETE`  | Delete user with id `id`.</br> Specify user´s password in the request body.   |
 | `/contenttypes`       | `GET`     | Return all content types present in the `contenttypes` collection. |
 |                       | `POST`    | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.</br> By convention the collection should be plural of the typename. The last attribute is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.</br> Example: ```{"typename": "Event", "collection": "events", "field_schema": {"date": "time.Time", "place": "string"}}```  |
 | `/contenttypes/:id`   | `GET`     | Return content type with id `:id`.   |
