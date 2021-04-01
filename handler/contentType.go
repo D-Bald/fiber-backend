@@ -15,7 +15,7 @@ import (
 // Initialize Collection ContentTypes with 'blogposts' and 'events'
 var (
 	blogpost = bson.D{
-		{Key: "type_name", Value: "blogpost"},
+		{Key: "typename", Value: "blogpost"},
 		{Key: "collection", Value: "blogposts"},
 		{Key: "field_schema", Value: bson.M{
 			"Description": new(string),
@@ -25,7 +25,7 @@ var (
 	}
 
 	event = bson.D{
-		{Key: "type_name", Value: "event"},
+		{Key: "typename", Value: "event"},
 		{Key: "collection", Value: "events"},
 		{Key: "field_schema", Value: bson.M{
 			"Description": new(string),
@@ -54,8 +54,8 @@ func getContentType(filter interface{}) (*model.ContentType, error) {
 	return ct, nil
 }
 
-func ValidCollection(collName string) bool {
-	filter := bson.D{{Key: "collection", Value: collName}}
+func ValidContentType(typename string) bool {
+	filter := bson.D{{Key: "typename", Value: typename}}
 	if _, err := getContentType(filter); err != nil {
 		return false
 	} else {
@@ -112,15 +112,15 @@ func GetContentType(c *fiber.Ctx) error {
 // CreateContent
 func CreateContentType(c *fiber.Ctx) error {
 	type NewContentType struct {
-		ID         primitive.ObjectID     `bson:"_id" json:"_id"`
-		TypeName   string                 `bson:"type_name" json:"type_name"`
-		Collection string                 `bson:"collection" json:"collection"`
-		Fields     map[string]interface{} `bson:"fields" json:"fields"`
+		ID          primitive.ObjectID     `bson:"_id" json:"_id"`
+		TypeName    string                 `bson:"typename" json:"typename"`
+		Collection  string                 `bson:"collection" json:"collection"`
+		FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema"`
 	}
 
 	ct := new(model.ContentType)
 	if err := c.BodyParser(ct); err != nil || ct.TypeName == "" || ct.Collection == "" {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'type_name' and 'collection' required", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "data": err.Error()})
 	}
 
 	// Initialise metadata
@@ -133,10 +133,10 @@ func CreateContentType(c *fiber.Ctx) error {
 	}
 
 	newCt := NewContentType{
-		ID:         ct.ID,
-		TypeName:   ct.TypeName,
-		Collection: ct.Collection,
-		Fields:     ct.FieldSchema,
+		ID:          ct.ID,
+		TypeName:    ct.TypeName,
+		Collection:  ct.Collection,
+		FieldSchema: ct.FieldSchema,
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": newCt})
 }

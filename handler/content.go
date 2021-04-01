@@ -77,12 +77,21 @@ func CreateContent(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
 
+	// Get corresponding content type to set collection and the ContentType reference.
+	// ct's FieldSchema could be accessed for validation
+	ct, err := getContentType(bson.D{{Key: "typename", Value: c.Params("type")}})
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
+	}
+
 	// Initialise metadata
 	content.ID = primitive.NewObjectID()
 	content.CreatedAt = time.Now()
 	content.UpdatedAt = time.Now()
+	content.ContentType = ct.ID
 
-	if _, err := database.Mg.Db.Collection(c.Params("type")).InsertOne(context.TODO(), &content); err != nil {
+	col := ct.Collection
+	if _, err := database.Mg.Db.Collection(col).InsertOne(context.TODO(), &content); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": content})
@@ -106,16 +115,4 @@ func DeleteContent(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully deleted", "data": result})
-}
-
-// not used yet used. Could be used for a GET route, that returns the schema, so that the Client knows, which fields to provide
-// also interesting for validation: https://docs.gofiber.io/guide/validation
-func getSchema(contentType string) (map[string]interface{}, error) {
-	filter := bson.D{{Key: "type_name", Value: contentType}}
-	ct, err := getContentType(filter)
-	if err != nil {
-		return nil, err
-	}
-	return ct.FieldSchema, nil
-
 }
