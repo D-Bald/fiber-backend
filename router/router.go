@@ -31,22 +31,22 @@ func SetupRoutes(app *fiber.App) {
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
 	// ContentTypes
-	contentTypes := api.Group("/contenttypes") // Insert middleware.Protected() here after testing
+	contentTypes := api.Group("/contenttypes", middleware.Protected())
 	contentTypes.Get("/", handler.GetAllContentTypes)
 	contentTypes.Post("/", handler.CreateContentType)
 	contentTypes.Get("/:id", handler.GetContentType)
 	contentTypes.Delete("/:id", handler.DeleteContentType)
 
 	// Content
-	content := api.Group("/:type", func(c *fiber.Ctx) error { //'type' must be a Collection name
-		if handler.ValidContentType(c.Params("type")) {
+	content := api.Group("/:content", func(c *fiber.Ctx) error { // `content` has to be a collection
+		if handler.IsValidContentCollection(c.Params("content")) {
 			return c.Next()
 		} else {
-			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your input for Content Type Collection", "data": nil})
+			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your route for valid content type", "data": nil})
 		}
 	})
 	content.Get("/", handler.GetAllContentEntries)
 	content.Post("/", middleware.Protected(), handler.CreateContent) // Protection must be changed, if non-users should be able to leave comments || seperate 'comments' endpoints?
 	content.Get("/:id", handler.GetContent)
-	content.Delete("(/:id", middleware.Protected(), handler.DeleteContent)
+	content.Delete("/:id", middleware.Protected(), handler.DeleteContent)
 }

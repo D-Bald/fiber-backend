@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
@@ -30,16 +29,12 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func validToken(t *jwt.Token, id string) bool {
-	n, err := strconv.Atoi(id)
-	if err != nil {
-		return false
-	}
+func isValidToken(t *jwt.Token, id string) bool {
 
 	claims := t.Claims.(jwt.MapClaims)
-	uid := int(claims["user_id"].(float64))
+	uid := claims["user_id"]
 
-	if uid != n {
+	if uid != id {
 		fmt.Println("ID anders als im Claim")
 		return false
 	}
@@ -47,7 +42,7 @@ func validToken(t *jwt.Token, id string) bool {
 	return true
 }
 
-func validUser(id string, p string) bool {
+func isValidUser(id string, p string) bool {
 	user, err := getUserById(id)
 	if err != nil || user.Username == "" {
 		return false
@@ -213,7 +208,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
-	if !validToken(token, id) {
+	if !isValidToken(token, id) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
@@ -252,11 +247,11 @@ func DeleteUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
-	if !validToken(token, id) {
+	if !isValidToken(token, id) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
-	if !validUser(id, pi.Password) {
+	if !isValidUser(id, pi.Password) {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
 	}
 	userID, _ := primitive.ObjectIDFromHex(id)

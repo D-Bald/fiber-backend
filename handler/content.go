@@ -24,7 +24,7 @@ func getContent(coll string, filter interface{}) (*model.Content, error) {
 
 func GetAllContentEntries(c *fiber.Ctx) error {
 	var result []*model.Content
-	coll := c.Params("type")
+	coll := c.Params("content")
 	ctx := context.TODO()
 	cursor, err := database.Mg.Db.Collection(coll).Find(ctx, bson.D{})
 	if err != nil {
@@ -55,7 +55,7 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 
 // GetContent query content
 func GetContent(c *fiber.Ctx) error {
-	coll := c.Params("type")
+	coll := c.Params("content")
 	contentID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
@@ -77,9 +77,10 @@ func CreateContent(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
 
-	// Get corresponding content type to set collection and the ContentType reference.
+	// Get corresponding content type set the ContentType reference.
 	// ct's FieldSchema could be accessed for validation
-	ct, err := getContentType(bson.D{{Key: "typename", Value: c.Params("type")}})
+	col := c.Params("content")
+	ct, err := getContentType(bson.D{{Key: "collection", Value: col}})
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
@@ -90,7 +91,6 @@ func CreateContent(c *fiber.Ctx) error {
 	content.UpdatedAt = time.Now()
 	content.ContentType = ct.ID
 
-	col := ct.Collection
 	if _, err := database.Mg.Db.Collection(col).InsertOne(context.TODO(), &content); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": err.Error()})
 	}
@@ -99,7 +99,7 @@ func CreateContent(c *fiber.Ctx) error {
 
 // DeleteContent delete content
 func DeleteContent(c *fiber.Ctx) error {
-	coll := c.Params("type")
+	coll := c.Params("content")
 	contentID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})

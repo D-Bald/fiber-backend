@@ -54,8 +54,8 @@ func getContentType(filter interface{}) (*model.ContentType, error) {
 	return ct, nil
 }
 
-func ValidContentType(typename string) bool {
-	filter := bson.D{{Key: "typename", Value: typename}}
+func IsValidContentCollection(col string) bool {
+	filter := bson.D{{Key: "collection", Value: col}}
 	if _, err := getContentType(filter); err != nil {
 		return false
 	} else {
@@ -88,7 +88,7 @@ func GetAllContentTypes(c *fiber.Ctx) error {
 	}
 
 	if len(result) == 0 {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found.", "data": result})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content Type found.", "data": result})
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "All Content Types", "data": result})
@@ -123,6 +123,12 @@ func CreateContentType(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "data": err.Error()})
 	}
 
+	checkTypeName, _ := getContentType(bson.D{{Key: "typename", Value: ct.TypeName}})
+	checkCollection, _ := getContentType(bson.D{{Key: "collection", Value: ct.Collection}})
+	if checkTypeName != nil || checkCollection != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "data": nil})
+	}
+
 	// Initialise metadata
 	ct.ID = primitive.NewObjectID()
 	ct.CreatedAt = time.Now()
@@ -138,7 +144,7 @@ func CreateContentType(c *fiber.Ctx) error {
 		Collection:  ct.Collection,
 		FieldSchema: ct.FieldSchema,
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": newCt})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "data": newCt})
 }
 
 // DeleteContent delete content

@@ -6,7 +6,7 @@ import (
 	"github.com/D-Bald/fiber-backend/config"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -67,7 +67,7 @@ func Login(c *fiber.Ctx) error {
 
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = ud.Username
-	claims["user_id"] = ud.ID
+	claims["user_id"] = ud.ID.Hex()
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
 	t, err := token.SignedString([]byte(config.Config("SECRET")))

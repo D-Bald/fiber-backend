@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/gofiber/fiber/v2"
@@ -18,7 +17,7 @@ func CreateSample(c *fiber.Ctx) error {
 	if err := c.BodyParser(sample); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
-	fmt.Printf("BodyParser successfull. Sample: %s %s", sample.TestField1, sample.TestField2)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if _, err := database.Mg.Db.Collection("samples").InsertOne(ctx, &sample); err != nil {
