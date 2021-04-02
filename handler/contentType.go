@@ -12,7 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Initialize Collection ContentTypes with 'blogposts' and 'events'
 var (
 	blogpost = bson.D{
 		{Key: "typename", Value: "blogpost"},
@@ -35,11 +34,26 @@ var (
 	}
 )
 
+// Initialize Collection ContentTypes with 'blogposts' and 'events'
 func InitContentTypes() error {
-	// TODO
-	// same Code as in CreateContentType but with var "blogpost" and "event"
-	err := new(error)
-	return *err
+	_, err := getContentType(bson.D{{Key: "typename", Value: "blogpost"}})
+	if err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, blogpost); err != nil {
+			return err
+		}
+	}
+	_, err = getContentType(bson.D{{Key: "typename", Value: "event"}})
+	if err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 // return ContentType by given Filter

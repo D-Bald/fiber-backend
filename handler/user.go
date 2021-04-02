@@ -162,6 +162,7 @@ func CreateUser(c *fiber.Ctx) error {
 		ID       primitive.ObjectID `json:"id"`
 		Username string             `json:"username"`
 		Email    string             `json:"email"`
+		Role     string             `json:"role"`
 	}
 
 	user := new(model.User)
@@ -187,6 +188,7 @@ func CreateUser(c *fiber.Ctx) error {
 	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
+	user.Role = "user"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -199,6 +201,7 @@ func CreateUser(c *fiber.Ctx) error {
 		ID:       user.ID,
 		Email:    user.Email,
 		Username: user.Username,
+		Role:     user.Role,
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})

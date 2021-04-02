@@ -14,5 +14,6 @@ type User struct {
 	Username  string             `bson:"username" json:"username" xml:"username" form:"username"`
 	Email     string             `bson:"email" json:"email" xml:"email" form:"email"`
 	Password  string             `bson:"password" json:"password" xml:"password" form:"password"`
-	Names     string             `bson:"names,omitempty" json:"names" xml:"names" form:"names"`
+	Names     string             `bson:"names" json:"names" xml:"names" form:"names"`
+	Role      string             `bson:"role" json:"role" xml:"role" form:"role"`
 }
