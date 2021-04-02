@@ -50,8 +50,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 * Content Handler:
    * add `PATCH` Method to update of any content entry
    * Query content and types by title/Name, tags, (and field-values?)
-* Configuration via Config file
 * API Endpoints for File/Media upload
-* API-Table: Add info which Routes are protected
+* Configuration via Config file
 * Recover from panics, so that the server does not break down just becuase one field of the request body could not be parsed (and find stable solution for body parsing?)
 * Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
