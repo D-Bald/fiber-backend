@@ -13,9 +13,12 @@ import (
 )
 
 func getContent(coll string, filter interface{}) (*model.Content, error) {
-	ctx := context.TODO()
 	var ct *model.Content
-	err := database.Mg.Db.Collection(coll).FindOne(ctx, filter).Decode(&ct)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := database.DB.Collection(coll).FindOne(ctx, filter).Decode(&ct)
 	if err != nil {
 		return nil, err
 	}
@@ -25,8 +28,11 @@ func getContent(coll string, filter interface{}) (*model.Content, error) {
 func GetAllContentEntries(c *fiber.Ctx) error {
 	var result []*model.Content
 	coll := c.Params("content")
-	ctx := context.TODO()
-	cursor, err := database.Mg.Db.Collection(coll).Find(ctx, bson.D{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := database.DB.Collection(coll).Find(ctx, bson.D{})
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content found", "data": result})
 	}
@@ -91,7 +97,10 @@ func CreateContent(c *fiber.Ctx) error {
 	content.UpdatedAt = time.Now()
 	content.ContentType = ct.ID
 
-	if _, err := database.Mg.Db.Collection(col).InsertOne(context.TODO(), &content); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if _, err := database.DB.Collection(col).InsertOne(ctx, &content); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": content})
@@ -109,7 +118,10 @@ func DeleteContent(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": nil})
 	}
 
-	result, err := database.Mg.Db.Collection(coll).DeleteOne(context.TODO(), filter)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := database.DB.Collection(coll).DeleteOne(ctx, filter)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content", "data": err.Error()})
 	}

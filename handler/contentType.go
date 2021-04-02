@@ -44,9 +44,11 @@ func InitContentTypes() error {
 
 // return ContentType by given Filter
 func getContentType(filter interface{}) (*model.ContentType, error) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	var ct *model.ContentType
-	err := database.Mg.Db.Collection("contenttypes").FindOne(ctx, filter).Decode(&ct)
+	err := database.DB.Collection("contenttypes").FindOne(ctx, filter).Decode(&ct)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +68,11 @@ func IsValidContentCollection(col string) bool {
 // GetAll query all Content Entries
 func GetAllContentTypes(c *fiber.Ctx) error {
 	var result []*model.ContentType
-	ctx := context.TODO()
-	cursor, err := database.Mg.Db.Collection("contenttypes").Find(ctx, bson.D{})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := database.DB.Collection("contenttypes").Find(ctx, bson.D{})
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content Types found", "data": result})
 	}
@@ -134,7 +139,10 @@ func CreateContentType(c *fiber.Ctx) error {
 	ct.CreatedAt = time.Now()
 	ct.UpdatedAt = time.Now()
 
-	if _, err := database.Mg.Db.Collection("contenttypes").InsertOne(context.TODO(), &ct); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, &ct); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": err.Error()})
 	}
 
@@ -158,7 +166,10 @@ func DeleteContentType(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
 	}
 
-	result, err := database.Mg.Db.Collection("contenttypes").DeleteOne(context.TODO(), filter)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := database.DB.Collection("contenttypes").DeleteOne(ctx, filter)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": err.Error()})
 	}

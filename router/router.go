@@ -31,11 +31,11 @@ func SetupRoutes(app *fiber.App) {
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
 	// ContentTypes
-	contentTypes := api.Group("/contenttypes", middleware.Protected())
+	contentTypes := api.Group("/contenttypes")
 	contentTypes.Get("/", handler.GetAllContentTypes)
-	contentTypes.Post("/", handler.CreateContentType)
+	contentTypes.Post("/", middleware.Protected(), handler.CreateContentType)
 	contentTypes.Get("/:id", handler.GetContentType)
-	contentTypes.Delete("/:id", handler.DeleteContentType)
+	contentTypes.Delete("/:id", middleware.Protected(), handler.DeleteContentType)
 
 	// Content
 	content := api.Group("/:content", func(c *fiber.Ctx) error { // `content` has to be a collection

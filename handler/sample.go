@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/gofiber/fiber/v2"
@@ -18,9 +19,10 @@ func CreateSample(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := database.Mg.Db.Collection("samples").InsertOne(ctx, &sample); err != nil {
+
+	if _, err := database.DB.Collection("samples").InsertOne(ctx, &sample); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create sample", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": sample})

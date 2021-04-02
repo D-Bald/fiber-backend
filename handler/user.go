@@ -58,8 +58,11 @@ func isValidUser(id string, p string) bool {
 func getUsers(filter interface{}) ([]*model.User, error) {
 	// A slice of tasks for storing the decoded documents
 	var users []*model.User
-	ctx := context.TODO()
-	cursor, err := database.Mg.Db.Collection("users").Find(ctx, filter)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := database.DB.Collection("users").Find(ctx, filter)
 	if err != nil {
 		return users, err
 	}
@@ -90,8 +93,11 @@ func getUsers(filter interface{}) ([]*model.User, error) {
 func getUser(filter interface{}) (*model.User, error) {
 	// A slice of tasks for storing the decoded documents
 	var user *model.User
-	ctx := context.TODO()
-	err := database.Mg.Db.Collection("users").FindOne(ctx, filter).Decode(&user)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := database.DB.Collection("users").FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +188,10 @@ func CreateUser(c *fiber.Ctx) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
-	if _, err := database.Mg.Db.Collection("users").InsertOne(context.TODO(), &user); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if _, err := database.DB.Collection("users").InsertOne(ctx, &user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create user", "data": err.Error()})
 	}
 
@@ -227,7 +236,11 @@ func UpdateUser(c *fiber.Ctx) error {
 			{Key: "updated_at", Value: true},
 		}},
 	}
-	result, err := database.Mg.Db.Collection("users").UpdateOne(context.TODO(), filter, update)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := database.DB.Collection("users").UpdateOne(ctx, filter, update)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": err.Error()})
 	}
@@ -254,9 +267,14 @@ func DeleteUser(c *fiber.Ctx) error {
 	if !isValidUser(id, pi.Password) {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
 	}
+
 	userID, _ := primitive.ObjectIDFromHex(id)
 	filter := bson.D{{Key: "_id", Value: userID}}
-	result, err := database.Mg.Db.Collection("users").DeleteOne(context.TODO(), filter)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := database.DB.Collection("users").DeleteOne(ctx, filter)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "data": err.Error()})
 	}

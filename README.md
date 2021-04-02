@@ -40,7 +40,7 @@
 FILL THIS OUT WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
 
 WATCH OUT: MONGODB NOT SELF-HOSTET => URI FOR ATLAS IS HARDCODED EXCEPT USER, DB NAME AND CREDENTIALS
-For self-hosted DB adjust MongoURI [here](https://github.com/D-Bald/fiber-backend/blob/0f15612d722b1bbc8c7a5356fff78ae308da2c71/database/connect.go#L24)
+For self-hosted DB adjust [MongoURI in this line](https://github.com/D-Bald/fiber-backend/blob/0f15612d722b1bbc8c7a5356fff78ae308da2c71/database/connect.go#L24)
 
 ## TO DO
 
