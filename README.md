@@ -2,10 +2,13 @@
 
 -------------------------
 
+## Content
+
 * [Inspired by...](#inspired-by...)
 * [API](#api)
 * [Workflows](#workflows)
-   * [Create Content and Content Types](#create-content-and-content-types)
+   * [Create content and content types](#create-content-and-content-types)
+   * [Create users and manage roles](#create-users-and-manage-roles)
 * [Database setup](#database-setup)
 * [TO DO](#to-do)
 
@@ -13,8 +16,8 @@
 
 ## Inspired by...
 
-- [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
-- [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
+* [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
+* [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
 
 ## API
 
@@ -32,18 +35,21 @@
 |                       | `POST`    | &check;                     | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.</br> By convention the collection should be plural of the typename. The last attribute is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.</br> Example: ```{"typename": "Event", "collection": "events", "field_schema": {"date": "time.Time", "place": "string"}}```  |
 | `/api/contenttypes/:id`   | `GET`     | &cross;                     | Return content type with id `:id`.   |
 |                       | `DELETE`  | &check;                     | Delete content type with id `:id`.   |
-| `/api/:content`           | `GET`     | &cross;                     | Return all content entries of the content type, where `content` is the corresponding collection. By Convention this should be plural of the `typename`.</br> For the previous example: `content` has to be set to `events`.   |
+| `/api/:content`           | `GET`     | &cross;                     | Return all content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.</br> For the previous example: `content` has to be set to `events`.   |
 |                       | `POST`    | &check;                     | Create a new content entry of the content type, where `content` is the corresponding collection.</br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
 | `/api/:content/:id`       | `GET`     | &cross;                     | Return content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 |                       | `DELETE`  | &check;                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
 
 ## Workflows
-### Create Content and Content Types
+### Create content and content types
 The Content Types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`).
 If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.
 
-## Database Setup
+### Create users and manage roles
+NOT YET IMPLEMENTED see [TO DO](#to-do)
+
+## Database setup
 
 FILL THIS OUT WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
 
