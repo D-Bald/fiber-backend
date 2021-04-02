@@ -54,3 +54,4 @@ For self-hosted DB adjust MongoURI [here](https://github.com/D-Bald/fiber-backen
 * API Endpoints for File/Media upload
 * API-Table: Add info which Routes are protected
 * Recover from panics, so that the server does not break down just becuase one field of the request body could not be parsed (and find stable solution for body parsing?)
+* Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
