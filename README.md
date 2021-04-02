@@ -4,6 +4,8 @@
 
 * [Inspired by...](#inspired-by...)
 * [API](#api)
+* [Workflows](#workflows)
+   * [Create Content and Content Types](#create-content-and-content-types)
 * [Database setup](#database-setup)
 * [TO DO](#to-do)
 
@@ -37,9 +39,9 @@
 
 
 ## Workflows
-### Content and Content Types
-The Content Types *events* and *blogposts* are preset and you can just start adding entries on those routes (`/api/events` or `/api/blogposts`).
-If you want to create a custom Content Type, first use the `/api/contenttype`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.
+### Create Content and Content Types
+The Content Types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`).
+If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.
 
 ## Database Setup
 
@@ -52,7 +54,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 ## TO DO
 
 * User Handler:
-   * Update not only "names" but also username, password...
+   * Update not only "names" but also username, password... (by using Query-Params in URL instead of specification in request body?)
    * Manage User Roles
 * Content Handler:
    * add `PATCH` Method to update of any content entry
@@ -60,5 +62,4 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
    * Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user. Create a default admin user on start.
 * API Endpoints for File/Media upload
 * Configuration via Config file
-* Recover from panics, so that the server does not break down just becuase one field of the request body could not be parsed (and find stable solution for body parsing?)
 * Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)

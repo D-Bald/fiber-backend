@@ -17,3 +17,10 @@ type User struct {
 	Names     string             `bson:"names" json:"names" xml:"names" form:"names"`
 	Role      string             `bson:"role" json:"role" xml:"role" form:"role"`
 }
+
+func (u *User) Init() {
+	u.ID = primitive.NewObjectID()
+	u.CreatedAt = time.Now()
+	u.UpdatedAt = time.Now()
+	u.Role = "user"
+}

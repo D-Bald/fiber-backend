@@ -15,3 +15,9 @@ type ContentType struct {
 	Collection  string                 `bson:"collection" json:"collection" xml:"collection" form:"collection"`
 	FieldSchema map[string]interface{} `bson:"fields_schema" json:"field_schema" xml:"field_schema" form:"field_schema"` // not used yet. Could be used for introducing a Validator on Collection Creation.
 }
+
+func (ct *ContentType) Init() {
+	ct.ID = primitive.NewObjectID()
+	ct.CreatedAt = time.Now()
+	ct.UpdatedAt = time.Now()
+}

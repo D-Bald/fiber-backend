@@ -92,10 +92,7 @@ func CreateContent(c *fiber.Ctx) error {
 	}
 
 	// Initialise metadata
-	content.ID = primitive.NewObjectID()
-	content.CreatedAt = time.Now()
-	content.UpdatedAt = time.Now()
-	content.ContentType = ct.ID
+	content.Init(ct.ID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

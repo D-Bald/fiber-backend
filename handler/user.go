@@ -178,17 +178,14 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
 	}
 
+	user.Init()
+
 	hash, err := hashPassword(user.Password)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not hash password", "data": err.Error()})
 
 	}
-
 	user.Password = hash
-	user.ID = primitive.NewObjectID()
-	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
-	user.Role = "user"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
