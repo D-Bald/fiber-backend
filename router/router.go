@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/handler"
 	"github.com/D-Bald/fiber-backend/middleware"
 
@@ -24,9 +25,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// User
 	user := api.Group("/user")
-	user.Get("/", handler.GetUsers)
+	user.Get("/", handler.GetUsers) // after testing: add middleware for admins only
 	user.Post("/", handler.CreateUser)
-	user.Get("/:id", handler.GetUser)
+	user.Get("/:id", handler.GetUser) // add middleware.Protected() with check for isValidToken or don't return password
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
@@ -39,7 +40,7 @@ func SetupRoutes(app *fiber.App) {
 
 	// Content
 	content := api.Group("/:content", func(c *fiber.Ctx) error { // `content` has to be a collection
-		if handler.IsValidContentCollection(c.Params("content")) {
+		if controller.IsValidContentCollection(c.Params("content")) {
 			return c.Next()
 		} else {
 			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your route for valid content type", "data": nil})

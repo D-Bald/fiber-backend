@@ -4,20 +4,15 @@
 
 ## Content
 
-* [Inspired by...](#inspired-by...)
-* [API](#api)
-* [Workflows](#workflows)
-   * [Create content and content types](#create-content-and-content-types)
-   * [Create users and manage roles](#create-users-and-manage-roles)
-* [Database setup](#database-setup)
-* [TO DO](#to-do)
+- [API](#api)
+- [Workflows](#workflows)
+   - [Create content and content types](#create-content-and-content-types)
+   - [Create users and manage roles](#create-users-and-manage-roles)
+- [Database setup](#database-setup)
+- [TO DO](#to-do)
+- [Thanks to...](#thanks-to...)
 
 -------------------------
-
-## Inspired by...
-
-* [go-fiber/recipes auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
-* [Quick Start: Golang & MongoDB - Modeling Documents with Go Data Structures](https://www.mongodb.com/blog/post/quick-start-golang--mongodb--modeling-documents-with-go-data-structures)
 
 ## API
 
@@ -59,13 +54,16 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 ## TO DO
 
-* User Handler:
-   * Update not only "names" but also username, password... (by using Query-Params in URL instead of specification in request body?)
-   * Manage User Roles
-* Content Handler:
-   * add `PATCH` Method to update of any content entry
-   * Query content and types by title/Name, tags, (and field-values?)
-   * Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user. Create a default admin user on start.
-* API Endpoints for File/Media upload
-* Configuration via Config file
-* Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
+- User Handler:
+   - Manage User Roles
+- Content Handler:
+   - add `PATCH` Method to update of any content entry
+   - Query content and types by title/Name, tags, (and field-values?)
+   - Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user (By handing the role to the jwt claims). Create a default admin user on start.
+- API Endpoints for File/Media upload
+- Configuration via Config file
+- Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
+
+## Thanks to...
+
+[go-fiber/recipes/auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)

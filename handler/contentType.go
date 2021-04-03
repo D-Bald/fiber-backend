@@ -1,10 +1,7 @@
 package handler
 
 import (
-	"context"
-	"time"
-
-	"github.com/D-Bald/fiber-backend/database"
+	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -12,117 +9,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var (
-	blogpost = bson.D{
-		{Key: "typename", Value: "blogpost"},
-		{Key: "collection", Value: "blogposts"},
-		{Key: "field_schema", Value: bson.M{
-			"Description": new(string),
-			"text":        new(string),
-		},
-		},
-	}
-
-	event = bson.D{
-		{Key: "typename", Value: "event"},
-		{Key: "collection", Value: "events"},
-		{Key: "field_schema", Value: bson.M{
-			"Description": new(string),
-			"date":        new(time.Time),
-		},
-		},
-	}
-)
-
-// Initialize Collection ContentTypes with 'blogposts' and 'events'
-func InitContentTypes() error {
-	_, err := getContentType(bson.D{{Key: "typename", Value: "blogpost"}})
-	if err != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, blogpost); err != nil {
-			return err
-		}
-	}
-	_, err = getContentType(bson.D{{Key: "typename", Value: "event"}})
-	if err != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, event); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-// return ContentType by given Filter
-func getContentType(filter interface{}) (*model.ContentType, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var ct *model.ContentType
-	err := database.DB.Collection("contenttypes").FindOne(ctx, filter).Decode(&ct)
-	if err != nil {
-		return nil, err
-	}
-
-	return ct, nil
-}
-
-func IsValidContentCollection(col string) bool {
-	filter := bson.D{{Key: "collection", Value: col}}
-	if _, err := getContentType(filter); err != nil {
-		return false
-	} else {
-		return true
-	}
-}
-
 // GetAll query all Content Entries
 func GetAllContentTypes(c *fiber.Ctx) error {
-	var result []*model.ContentType
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	cursor, err := database.DB.Collection("contenttypes").Find(ctx, bson.D{})
+	result, err := controller.GetContentTypes(bson.D{})
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content Types found", "data": result})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err.Error()})
 	}
-	defer cursor.Close(ctx)
-
-	for cursor.Next(ctx) {
-		var t model.ContentType
-		err := cursor.Decode(&t)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": result})
-		}
-
-		result = append(result, &t)
-	}
-
-	if err := cursor.Err(); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": result})
-	}
-
-	if len(result) == 0 {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Content Type found.", "data": result})
-	}
-
 	return c.JSON(fiber.Map{"status": "success", "message": "All Content Types", "data": result})
 }
 
 // GetContent query content
 func GetContentType(c *fiber.Ctx) error {
-	typeID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	ct, err := controller.GetContentTypeById(c.Params("id"))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
-	}
-	filter := bson.D{{Key: "_id", Value: typeID}}
-	ct, err := getContentType(filter)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
 
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Content Type found", "data": ct})
@@ -138,26 +38,24 @@ func CreateContentType(c *fiber.Ctx) error {
 	}
 
 	ct := new(model.ContentType)
+	// Parse input
 	if err := c.BodyParser(ct); err != nil || ct.TypeName == "" || ct.Collection == "" {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "data": err.Error()})
 	}
 
-	checkTypeName, _ := getContentType(bson.D{{Key: "typename", Value: ct.TypeName}})
-	checkCollection, _ := getContentType(bson.D{{Key: "collection", Value: ct.Collection}})
+	// Check if already exists
+	checkTypeName, _ := controller.GetContentType(bson.D{{Key: "typename", Value: ct.TypeName}})
+	checkCollection, _ := controller.GetContentType(bson.D{{Key: "collection", Value: ct.Collection}})
 	if checkTypeName != nil || checkCollection != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "data": nil})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "data": nil})
 	}
 
-	// Initialise metadata
-	ct.Init()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if _, err := database.DB.Collection("contenttypes").InsertOne(ctx, &ct); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": err.Error()})
+	// Insert in DB
+	if _, err := controller.CreateContentType(ct); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": err.Error()})
 	}
 
+	// Response
 	newCt := NewContentType{
 		ID:          ct.ID,
 		TypeName:    ct.TypeName,
@@ -167,23 +65,22 @@ func CreateContentType(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "data": newCt})
 }
 
+// Update content type with parameters from request body
+// ADD PATCH HANDLER HERE
+
 // DeleteContent delete content
 func DeleteContentType(c *fiber.Ctx) error {
-	typeID, err := primitive.ObjectIDFromHex(c.Params("id"))
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on ID", "data": err.Error()})
-	}
-	filter := bson.D{{Key: "_id", Value: typeID}}
-	if _, err := getContentType(filter); err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
+	id := c.Params("id")
+
+	// Check if content type with given id exists
+	if _, err := controller.GetContentTypeById(id); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	result, err := database.DB.Collection("contenttypes").DeleteOne(ctx, filter)
+	// Delete in DB
+	result, err := controller.DeleteContentType(id)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully deleted", "data": result})

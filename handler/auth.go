@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
+	"github.com/D-Bald/fiber-backend/controller"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -21,6 +22,7 @@ func Login(c *fiber.Ctx) error {
 		Username string             `json:"username"`
 		Email    string             `json:"email"`
 		Password string             `json:"password"`
+		Role     string             `json:"role"`
 	}
 	var input LoginInput
 	var ud UserData
@@ -35,12 +37,12 @@ func Login(c *fiber.Ctx) error {
 	}
 	pass := input.Password
 
-	email, _ := getUserByEmail(identity)
+	email, _ := controller.GetUserByEmail(identity)
 
-	user, _ := getUserByUsername(identity)
+	user, _ := controller.GetUserByUsername(identity)
 
 	if email == nil && user == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "User not found", "data": nil})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "data": nil})
 	}
 
 	if email == nil {
@@ -49,6 +51,7 @@ func Login(c *fiber.Ctx) error {
 			Username: user.Username,
 			Email:    user.Email,
 			Password: user.Password,
+			Role:     user.Role,
 		}
 	} else {
 		ud = UserData{
@@ -56,6 +59,7 @@ func Login(c *fiber.Ctx) error {
 			Username: email.Username,
 			Email:    email.Email,
 			Password: email.Password,
+			Role:     user.Role,
 		}
 	}
 
@@ -68,6 +72,7 @@ func Login(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = ud.Username
 	claims["user_id"] = ud.ID.Hex()
+	claims["role"] = ud.Role
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
 	t, err := token.SignedString([]byte(config.Config("SECRET")))

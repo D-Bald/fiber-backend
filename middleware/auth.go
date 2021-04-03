@@ -15,6 +15,15 @@ func Protected() fiber.Handler {
 	})
 }
 
+// func AdminOnly() fiber.Handler {
+// 	jwt.MapClaims
+// 	jwtware.New(jwtware.Config{
+// 		SigningKey:   []byte(config.Config("SECRET")),
+// 		ErrorHandler: jwtError,
+// 	})
+// 	return
+// }
+
 func jwtError(c *fiber.Ctx, err error) error {
 	if err.Error() == "Missing or malformed JWT" {
 		return c.Status(fiber.StatusBadRequest).

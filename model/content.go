@@ -18,9 +18,18 @@ type Content struct {
 	Fields      map[string]interface{} `bson:"fields,inline" json:"fields" xml:"fields" form:"fields"` // inline Flag used, to handle fields of a bson.D input as if they were part of Content Document (https://pkg.go.dev/go.mongodb.org/mongo-driver/bson#hdr-Structs)
 }
 
+// Initialize metadata
 func (c *Content) Init(ct primitive.ObjectID) {
 	c.ID = primitive.NewObjectID()
 	c.CreatedAt = time.Now()
 	c.UpdatedAt = time.Now()
 	c.ContentType = ct
+}
+
+// Fields that can be updated through API endpoints
+type UpdateContentInput struct {
+	Title     string                 `bson:"title,omitempty" json:"title" xml:"title" form:"title"`
+	Published bool                   `bson:"published,omitempty" json:"published" xml:"published" form:"published"`
+	Tags      []string               `bson:"tags,omitempty" json:"tags" xml:"tags" form:"tags"`
+	Fields    map[string]interface{} `bson:"fields,inline,omitempty" json:"fields" xml:"fields" form:"fields"`
 }

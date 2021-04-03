@@ -1,157 +1,32 @@
 package handler
 
 import (
-	"context"
 	"fmt"
-	"time"
 
-	"github.com/D-Bald/fiber-backend/database"
+	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// private funcs
-// Auth and Validation
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-// CheckPasswordHash compare password with hash
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-func isValidToken(t *jwt.Token, id string) bool {
-
-	claims := t.Claims.(jwt.MapClaims)
-	uid := claims["user_id"]
-
-	if uid != id {
-		fmt.Println("ID anders als im Claim")
-		return false
-	}
-
-	return true
-}
-
-func isValidUser(id string, p string) bool {
-	user, err := getUserById(id)
-	if err != nil || user.Username == "" {
-		return false
-	}
-	if !checkPasswordHash(p, user.Password) {
-		return false
-	}
-	return true
-}
-
-// Getters for easy DB lookups
-// Return Users from DB with given Filter
-func getUsers(filter interface{}) ([]*model.User, error) {
-	// A slice of tasks for storing the decoded documents
-	var users []*model.User
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	cursor, err := database.DB.Collection("users").Find(ctx, filter)
-	if err != nil {
-		return users, err
-	}
-	defer cursor.Close(ctx)
-
-	for cursor.Next(ctx) {
-		var u model.User
-		err := cursor.Decode(&u)
-		if err != nil {
-			return users, err
-		}
-
-		users = append(users, &u)
-	}
-
-	if err := cursor.Err(); err != nil {
-		return users, err
-	}
-
-	if len(users) == 0 {
-		return users, mongo.ErrNoDocuments
-	}
-
-	return users, nil
-}
-
-// Return a single User from DB by filter
-func getUser(filter interface{}) (*model.User, error) {
-	// A slice of tasks for storing the decoded documents
-	var user *model.User
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	err := database.DB.Collection("users").FindOne(ctx, filter).Decode(&user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func getUserById(id string) (*model.User, error) {
-	userID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-
-	filter := bson.D{{Key: "_id", Value: userID}}
-	user, err := getUser(filter)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func getUserByEmail(e string) (*model.User, error) {
-	filter := bson.D{{Key: "email", Value: e}}
-	user, err := getUser(filter)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func getUserByUsername(u string) (*model.User, error) {
-	filter := bson.D{{Key: "username", Value: u}}
-	user, err := getUser(filter)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-// public funcs
-// actual Handlers
-// GetUsers get all Users in DB
+// GetUsers get all Users
 func GetUsers(c *fiber.Ctx) error {
-	users, err := getUsers(bson.D{})
+	users, err := controller.GetUsers(bson.D{})
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No User found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
 }
 
 // GetUser get a user
 func GetUser(c *fiber.Ctx) error {
-	user, err := getUserById(c.Params("id"))
+	user, err := controller.GetUserById(c.Params("id"))
 	if err != nil || user.Username == "" {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "User not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
 }
@@ -167,33 +42,25 @@ func CreateUser(c *fiber.Ctx) error {
 
 	user := new(model.User)
 
+	// Parse input
 	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" || user.Password == "" {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
 	}
 
-	if u, _ := getUserByUsername(user.Username); u != nil {
+	// Check if already exists
+	if u, _ := controller.GetUserByUsername(user.Username); u != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "data": nil})
 	}
-	if u, _ := getUserByEmail(user.Email); u != nil {
+	if u, _ := controller.GetUserByEmail(user.Email); u != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
 	}
 
-	user.Init()
-
-	hash, err := hashPassword(user.Password)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not hash password", "data": err.Error()})
-
-	}
-	user.Password = hash
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if _, err := database.DB.Collection("users").InsertOne(ctx, &user); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create user", "data": err.Error()})
+	// Insert in DB
+	if _, err := controller.CreateUser(user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "data": err.Error()})
 	}
 
+	// Response
 	newUser := NewUser{
 		ID:       user.ID,
 		Email:    user.Email,
@@ -204,16 +71,8 @@ func CreateUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
 }
 
-// UpdateUser update user
+// Update user with parameters from request body
 func UpdateUser(c *fiber.Ctx) error {
-	type UpdateUserInput struct {
-		Names string `json:"names" xml:"names" form:"names"` // erweitern, sondass auch andere Felder geupdatet werden können
-	}
-	var uui UpdateUserInput
-	if err := c.BodyParser(&uui); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
-	}
-
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
@@ -221,28 +80,28 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
-	userID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error on User ID", "data": err.Error()})
+	uui := new(model.UpdateUserInput)
+	if err := c.BodyParser(uui); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
 	}
 
-	// Update User with given ID: sets Field Values for "names" and "updatet_at"
-	filter := bson.D{{Key: "_id", Value: userID}}
-	update := bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "names", Value: uui.Names},
-		}},
-		{Key: "$currentDate", Value: bson.D{
-			{Key: "updated_at", Value: true},
-		}},
+	if uui.Username != "" {
+		if u, _ := controller.GetUserByUsername(uui.Username); u != nil {
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "data": nil})
+		}
 	}
+	if uui.Email != "" {
+		if u, _ := controller.GetUserByEmail(uui.Email); u != nil {
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
+		}
+	}
+	// if uui.Role != "" {
+	// 	// CHECK FOR ADMIN CLAIM HERE
+	// }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	result, err := database.DB.Collection("users").UpdateOne(ctx, filter, update)
+	result, err := controller.UpdateUser(id, uui)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": result})
 }
@@ -265,18 +124,44 @@ func DeleteUser(c *fiber.Ctx) error {
 	}
 
 	if !isValidUser(id, pi.Password) {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
 	}
 
-	userID, _ := primitive.ObjectIDFromHex(id)
-	filter := bson.D{{Key: "_id", Value: userID}}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	result, err := database.DB.Collection("users").DeleteOne(ctx, filter)
+	result, err := controller.DeleteUser(id)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": result})
+}
+
+// Validators
+
+func isValidToken(t *jwt.Token, id string) bool {
+
+	claims := t.Claims.(jwt.MapClaims)
+	uid := claims["user_id"]
+
+	if uid != id {
+		fmt.Println("ID anders als im Claim")
+		return false
+	}
+
+	return true
+}
+
+func isValidUser(id string, p string) bool {
+	user, err := controller.GetUserById(id)
+	if err != nil || user.Username == "" {
+		return false
+	}
+	if !checkPasswordHash(p, user.Password) {
+		return false
+	}
+	return true
+}
+
+// CheckPasswordHash compare password with hash
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
