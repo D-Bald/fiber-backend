@@ -65,9 +65,6 @@ func CreateContentType(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "data": newCt})
 }
 
-// Update content type with parameters from request body
-// ADD PATCH HANDLER HERE
-
 // DeleteContent delete content
 func DeleteContentType(c *fiber.Ctx) error {
 	id := c.Params("id")

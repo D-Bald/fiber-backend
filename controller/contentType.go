@@ -125,9 +125,6 @@ func CreateContentType(ct *model.ContentType) (*mongo.InsertOneResult, error) {
 	return database.DB.Collection("contenttypes").InsertOne(ctx, ct)
 }
 
-// Update content types with given Parameters
-// ADD CONTROLLER FOR PATCH HANDLER HERE
-
 // Delete content type with given ID in DB
 func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 	ctID, err := primitive.ObjectIDFromHex(id)
