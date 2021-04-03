@@ -56,6 +56,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 - User Handler:
    - Manage User Roles
+   - Check for admin role on update for the 'role' field
 - Content Handler:
    - add `PATCH` Method to update of any content entry
    - Query content and types by title/Name, tags, (and field-values?)
@@ -63,6 +64,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 - API Endpoints for File/Media upload
 - Configuration via Config file
 - Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
+- Refactor Handler, so that database lookups are seperated in controller
 
 ## Thanks to...
 
