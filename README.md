@@ -24,7 +24,7 @@
 | `/api/user/`          | `GET`     | &cross;                     | Return all users present in the `users` collection.  |
 |                       | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`.   |
 | `/api/user/:id`       | `GET`     | &cross;                     | Return user with id `id`.   |
-|                       | `PATCH`   | &check;                     | Update user with id `id`. </br> Currently only `names` can be updated. Flexible Update of all fields is planned.   |
+|                       | `PATCH`   | &check;                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
 |                       | `DELETE`  | &check;                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |
 | `/api/contenttypes`       | `GET`     | &cross;                     | Return all content types present in the `contenttypes` collection. |
 |                       | `POST`    | &check;                     | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.</br> By convention the collection should be plural of the typename. The last attribute is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.</br> Example: ```{"typename": "Event", "collection": "events", "field_schema": {"date": "time.Time", "place": "string"}}```  |
@@ -42,7 +42,10 @@ The Content Types *event* and *blogpost* are preset and you can start adding ent
 If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.
 
 ### Create users and manage roles
-NOT YET IMPLEMENTED see [TO DO](#to-do)
+The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
+Anybody can create a new user. The role is automatically set to *user*. A user can edit the own data i.e. *username*, *email*, *password*, *names*.
+Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user.
+
 
 ## Database setup
 
@@ -51,6 +54,7 @@ FILL THIS OUT WHEN CONFIGURATION VIA CONFIG FILE IS AVAILABLE
 WATCH OUT: MONGODB NOT SELF-HOSTET => URI FOR ATLAS IS HARDCODED EXCEPT USER, DB NAME AND CREDENTIALS.
 
 For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fiber-backend/blob/0f15612d722b1bbc8c7a5356fff78ae308da2c71/database/connect.go#L24)
+
 
 ## TO DO
 
@@ -62,6 +66,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
    - Query content and types by title/Name, tags, (and field-values?)
 - Add Auth Middleware: Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user (By handing the role to the jwt claims). Create a default admin user on start.
 - Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
+
 
 ## Thanks to...
 

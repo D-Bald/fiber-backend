@@ -59,7 +59,7 @@ func GetContent(coll string, filter interface{}) (*model.Content, error) {
 	return ct, nil
 }
 
-// Return Content from collection coll with given ID
+// Return Content from collection coll with provided ID
 func GetContentById(coll string, id string) (*model.Content, error) {
 	cID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -70,7 +70,7 @@ func GetContentById(coll string, id string) (*model.Content, error) {
 	return GetContent(coll, filter)
 }
 
-// Insert content entry in collection coll with given Parameters
+// Insert content entry in collection coll with provided Parameters
 func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult, error) {
 	// Get corresponding content type set the ContentType reference.
 	// ct's FieldSchema could be accessed for validation
@@ -88,10 +88,10 @@ func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult,
 	return database.DB.Collection(coll).InsertOne(ctx, content)
 }
 
-// Update content entry in collection coll with given Parameters
+// Update content entry in collection coll with provided Parameters
 // ADD CONTROLLER FOR PATCH HANDLER HERE
 
-// Delete content entry given ID in DB
+// Delete content entry provided ID in DB
 func DeleteContent(coll string, id string) (*mongo.DeleteResult, error) {
 	cID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,7 +13,41 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Return all users from DB with given Filter
+// Initialize Collection Users with a admin user
+func hashedAdminPassword() (string, error) {
+	hash, err := hashPassword(config.Config("ADMIN_PASSWORD"))
+	if err != nil {
+		return bson.TypeNull.String(), err
+	}
+	return hash, nil
+}
+
+func InitAdminUser() error {
+	_, err := GetUsers(bson.D{{Key: "role", Value: "admin"}})
+	if err != nil {
+		hash, err := hashedAdminPassword()
+		if err != nil {
+			return err
+		}
+		adminUser := bson.D{
+			{Key: "username", Value: "adminUser"},
+			{Key: "email", Value: "admin@sample.com"},
+			{Key: "password", Value: hash},
+			{Key: "names", Value: "admin user"},
+			{Key: "role", Value: "admin"},
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if _, err := database.DB.Collection("users").InsertOne(ctx, adminUser); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// Return all users from DB with provided Filter
 func GetUsers(filter interface{}) ([]*model.User, error) {
 	// A slice of tasks for storing the decoded documents
 	var users []*model.User
@@ -81,7 +116,7 @@ func GetUserByUsername(u string) (*model.User, error) {
 	return GetUser(filter)
 }
 
-// Insert user with given Parameters in DB
+// Insert user with provided Parameters in DB
 func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 	// Initialize metadata
 	user.Init()
@@ -98,7 +133,7 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 	return database.DB.Collection("users").InsertOne(ctx, user)
 }
 
-// Update user with given Parameters in DB
+// Update user with provided Parameters in DB
 func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, error) {
 	userID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -114,7 +149,7 @@ func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, e
 		input.Password = hash
 	}
 
-	// Update user with given ID: sets field values for "names" and "updatet_at"
+	// Update user with provided ID: sets field values for "names" and "updatet_at"
 	filter := bson.D{{Key: "_id", Value: userID}}
 	update := bson.D{
 		{Key: "$set", Value: *input},
@@ -129,7 +164,7 @@ func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, e
 	return database.DB.Collection("users").UpdateOne(ctx, filter, update)
 }
 
-// Delete user with given ID in DB
+// Delete user with provided ID in DB
 func DeleteUser(id string) (*mongo.DeleteResult, error) {
 	uID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

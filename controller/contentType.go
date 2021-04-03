@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Init ContentTypes: 'blogposts' and 'events'
 var (
 	blogpost = bson.D{
 		{Key: "typename", Value: "blogpost"},
@@ -104,7 +105,7 @@ func GetContentType(filter interface{}) (*model.ContentType, error) {
 	return ct, nil
 }
 
-// Return a single ContentType with given ID
+// Return a single ContentType with provided ID
 func GetContentTypeById(id string) (*model.ContentType, error) {
 	ctID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -114,7 +115,7 @@ func GetContentTypeById(id string) (*model.ContentType, error) {
 	return GetContentType(filter)
 }
 
-// Insert content type with given Parameters in DB
+// Insert content type with provided Parameters in DB
 func CreateContentType(ct *model.ContentType) (*mongo.InsertOneResult, error) {
 	// Initialize metadata
 	ct.Init()
@@ -125,7 +126,7 @@ func CreateContentType(ct *model.ContentType) (*mongo.InsertOneResult, error) {
 	return database.DB.Collection("contenttypes").InsertOne(ctx, ct)
 }
 
-// Delete content type with given ID in DB
+// Delete content type with provided ID in DB
 func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 	ctID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

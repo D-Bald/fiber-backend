@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -76,12 +74,12 @@ func UpdateUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
-	if !isValidToken(token, id) {
+	if !isValidToken(token, id) && !isAdminToken(token) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
 	uui := new(model.UpdateUserInput)
-	if err := c.BodyParser(uui); err != nil {
+	if err := c.BodyParser(uui); err != nil || uui == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
 	}
 
@@ -95,9 +93,11 @@ func UpdateUser(c *fiber.Ctx) error {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
 		}
 	}
-	// if uui.Role != "" {
-	// 	// CHECK FOR ADMIN CLAIM HERE
-	// }
+	if uui.Role != "" {
+		if !isAdminToken(token) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "data": nil})
+		}
+	}
 
 	result, err := controller.UpdateUser(id, uui)
 	if err != nil {
@@ -119,11 +119,11 @@ func DeleteUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
-	if !isValidToken(token, id) {
+	if !isValidToken(token, id) && !isAdminToken(token) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
 	}
 
-	if !isValidUser(id, pi.Password) {
+	if !isValidUser(id, pi.Password) && !isAdminToken(token) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
 	}
 
@@ -136,19 +136,17 @@ func DeleteUser(c *fiber.Ctx) error {
 
 // Validators
 
+// Checks if the user_id claim of the token matches the id of the target user
 func isValidToken(t *jwt.Token, id string) bool {
-
-	claims := t.Claims.(jwt.MapClaims)
-	uid := claims["user_id"]
-
-	if uid != id {
-		fmt.Println("ID anders als im Claim")
-		return false
-	}
-
-	return true
+	return t.Claims.(jwt.MapClaims)["user_id"] == id
 }
 
+// Checks if the role claim of the token is `admin`
+func isAdminToken(t *jwt.Token) bool {
+	return t.Claims.(jwt.MapClaims)["role"] == "admin"
+}
+
+// Checks if the user exists in the DB and if the provided password matches the saved one
 func isValidUser(id string, p string) bool {
 	user, err := controller.GetUserById(id)
 	if err != nil || user.Username == "" {

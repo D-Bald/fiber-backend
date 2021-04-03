@@ -26,7 +26,14 @@ func main() {
 	}
 
 	// Initialize Database
-	controller.InitContentTypes()
+	if err := controller.InitContentTypes(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Initialize admin user
+	if err := controller.InitAdminUser(); err != nil {
+		log.Fatal(err)
+	}
 
 	router.SetupRoutes(app)
 	log.Fatal(app.Listen(":3000"))
