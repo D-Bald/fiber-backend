@@ -61,10 +61,7 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
    - add `PATCH` Method to update of any content entry
    - Query content and types by title/Name, tags, (and field-values?)
 - Add Auth Middleware: Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user (By handing the role to the jwt claims). Create a default admin user on start.
-- API Endpoints for File/Media upload
-- Configuration via Config file
 - Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
-- Refactor Handler, so that database lookups are seperated in controller
 
 ## Thanks to...
 
