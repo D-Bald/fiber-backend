@@ -23,7 +23,7 @@ func hashedAdminPassword() (string, error) {
 }
 
 func InitAdminUser() error {
-	_, err := GetUsers(bson.D{{Key: "role", Value: "admin"}})
+	_, err := GetUsers(bson.D{{Key: "roles", Value: "admin"}})
 	if err != nil {
 		hash, err := hashedAdminPassword()
 		if err != nil {
@@ -34,7 +34,7 @@ func InitAdminUser() error {
 			{Key: "email", Value: "admin@sample.com"},
 			{Key: "password", Value: hash},
 			{Key: "names", Value: "admin user"},
-			{Key: "role", Value: "admin"},
+			{Key: "roles", Value: bson.A{"user", "admin"}},
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

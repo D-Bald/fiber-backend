@@ -35,7 +35,7 @@ func CreateUser(c *fiber.Ctx) error {
 		ID       primitive.ObjectID `json:"id"`
 		Username string             `json:"username"`
 		Email    string             `json:"email"`
-		Role     string             `json:"role"`
+		Roles    []string           `json:"role"`
 	}
 
 	user := new(model.User)
@@ -63,7 +63,7 @@ func CreateUser(c *fiber.Ctx) error {
 		ID:       user.ID,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Roles:    user.Roles,
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
@@ -93,7 +93,7 @@ func UpdateUser(c *fiber.Ctx) error {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
 		}
 	}
-	if uui.Role != "" {
+	if uui.Roles != nil {
 		if !isAdminToken(token) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "data": nil})
 		}
@@ -143,7 +143,18 @@ func isValidToken(t *jwt.Token, id string) bool {
 
 // Checks if the role claim of the token is `admin`
 func isAdminToken(t *jwt.Token) bool {
-	return t.Claims.(jwt.MapClaims)["role"] == "admin"
+	return t.Claims.(jwt.MapClaims)["admin"] == true
+}
+
+// hasRole takes a string slice of roles and looks for an element in it. If found it will
+// return true, otherwise it will return false.
+func hasRole(slice []string, role string) bool {
+	for _, item := range slice {
+		if item == role {
+			return true
+		}
+	}
+	return false
 }
 
 // Checks if the user exists in the DB and if the provided password matches the saved one
