@@ -48,9 +48,9 @@ func InitAdminUser() error {
 }
 
 // Return all users from DB with provided Filter
-func GetUsers(filter interface{}) ([]*model.User, error) {
+func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
 	// A slice of tasks for storing the decoded documents
-	var users []*model.User
+	var users []*model.UserOutput
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -62,7 +62,7 @@ func GetUsers(filter interface{}) ([]*model.User, error) {
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var u model.User
+		var u model.UserOutput
 		err := cursor.Decode(&u)
 		if err != nil {
 			return users, err
@@ -83,8 +83,8 @@ func GetUsers(filter interface{}) ([]*model.User, error) {
 }
 
 // Return a single user that matches the filter
-func GetUser(filter interface{}) (*model.User, error) {
-	var user *model.User
+func GetUser(filter interface{}) (*model.UserOutput, error) {
+	var user *model.UserOutput
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -96,7 +96,8 @@ func GetUser(filter interface{}) (*model.User, error) {
 	return user, nil
 }
 
-func GetUserById(id string) (*model.User, error) {
+// Return a single user that matches the id input
+func GetUserById(id string) (*model.UserOutput, error) {
 	uID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -106,14 +107,40 @@ func GetUserById(id string) (*model.User, error) {
 	return GetUser(filter)
 }
 
-func GetUserByEmail(e string) (*model.User, error) {
+// Return a single user that matches the email input
+func GetUserByEmail(e string) (*model.UserOutput, error) {
 	filter := bson.D{{Key: "email", Value: e}}
 	return GetUser(filter)
 }
 
-func GetUserByUsername(u string) (*model.User, error) {
+// Return a single user that matches the username input
+func GetUserByUsername(u string) (*model.UserOutput, error) {
 	filter := bson.D{{Key: "username", Value: u}}
 	return GetUser(filter)
+}
+
+// Return hashed Password of User with provided ID
+func GetUserPassword(id string) (string, error) {
+	type userPassword struct {
+		Password string `bson:"password"`
+	}
+	var userPW *userPassword
+
+	uID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return bson.TypeNull.String(), err
+	}
+	filter := bson.M{"_id": uID}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = database.DB.Collection("users").FindOne(ctx, filter).Decode(&userPW)
+	if err != nil {
+		return bson.TypeNull.String(), err
+	}
+
+	return userPW.Password, nil
 }
 
 // Insert user with provided Parameters in DB

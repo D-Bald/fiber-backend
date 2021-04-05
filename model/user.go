@@ -34,3 +34,12 @@ type UpdateUserInput struct {
 	Names    string   `bson:"names,omitempty" json:"names" xml:"names" form:"names"`
 	Roles    []string `bson:"roles,omitempty" json:"roles" xml:"roles" form:"roles"`
 }
+
+// Fields that are returned on GET methods (password and metadata omitted)
+type UserOutput struct {
+	ID       primitive.ObjectID `bson:"_id" json:"id" xml:"id" form:"id"`
+	Username string             `bson:"username" json:"username" xml:"username" form:"username"`
+	Email    string             `bson:"email" json:"email" xml:"email" form:"email"`
+	Names    string             `bson:"names,omitempty" json:"names" xml:"names" form:"names"`
+	Roles    []string           `bson:"roles,omitempty" json:"roles" xml:"roles" form:"roles"`
+}

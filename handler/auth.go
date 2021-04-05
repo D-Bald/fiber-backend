@@ -21,7 +21,6 @@ func Login(c *fiber.Ctx) error {
 		ID       primitive.ObjectID `json:"id"`
 		Username string             `json:"username"`
 		Email    string             `json:"email"`
-		Password string             `json:"password"`
 		Roles    []string           `json:"roles"`
 	}
 	var input LoginInput
@@ -50,7 +49,6 @@ func Login(c *fiber.Ctx) error {
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
-			Password: user.Password,
 			Roles:    user.Roles,
 		}
 	} else {
@@ -58,12 +56,17 @@ func Login(c *fiber.Ctx) error {
 			ID:       email.ID,
 			Username: email.Username,
 			Email:    email.Email,
-			Password: email.Password,
 			Roles:    email.Roles,
 		}
 	}
 
-	if !checkPasswordHash(pass, ud.Password) {
+	pw, err := controller.GetUserPassword(ud.ID.Hex())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not validate user", "data": nil})
+	}
+
+	if !checkPasswordHash(pass, pw) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Invalid password", "data": nil})
 	}
 

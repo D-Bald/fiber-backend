@@ -44,7 +44,7 @@ If you want to create a custom Content Type, first use the `/api/contenttypes`en
 ### Create users and manage roles
 The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
 Anybody can create a new user. The role is automatically set to *user*. A user can edit the own data i.e. *username*, *email*, *password*, *names*.
-Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user.
+Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.
 
 
 ## Database setup
@@ -58,7 +58,6 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 ## TO DO
 - User Handler:
-   - Specify Output Fields for GET methods: don't send Password to anybody
    - Specify `/api/user/:id/password` route to get the password, if the token belongs to user targeted with `:id`
 - Content Handler:
    - add `PATCH` Method to update of any content entry

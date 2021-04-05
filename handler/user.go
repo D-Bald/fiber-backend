@@ -4,7 +4,6 @@ import (
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -31,13 +30,6 @@ func GetUser(c *fiber.Ctx) error {
 
 // CreateUser new user
 func CreateUser(c *fiber.Ctx) error {
-	type NewUser struct {
-		ID       primitive.ObjectID `json:"id"`
-		Username string             `json:"username"`
-		Email    string             `json:"email"`
-		Roles    []string           `json:"role"`
-	}
-
 	user := new(model.User)
 
 	// Parse input
@@ -59,10 +51,11 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Response
-	newUser := NewUser{
+	newUser := model.UserOutput{
 		ID:       user.ID,
 		Email:    user.Email,
 		Username: user.Username,
+		Names:    user.Names,
 		Roles:    user.Roles,
 	}
 
@@ -163,7 +156,11 @@ func isValidUser(id string, p string) bool {
 	if err != nil || user.Username == "" {
 		return false
 	}
-	if !checkPasswordHash(p, user.Password) {
+	pw, err := controller.GetUserPassword(id)
+	if err != nil {
+		return false
+	}
+	if !checkPasswordHash(p, pw) {
 		return false
 	}
 	return true
