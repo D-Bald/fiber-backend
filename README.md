@@ -57,10 +57,12 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 
 ## TO DO
-
+- User Handler:
+   - Specify Output Fields for GET methods: don't send Password to anybody
+   - Specify `/api/user/:id/password` route to get the password, if the token belongs to user targeted with `:id`
 - Content Handler:
    - add `PATCH` Method to update of any content entry
-   - Query content and types by title/Name, tags, (and field-values?)
+   - Query content and types by title/Name, tags, and field-values (via https://docs.mongodb.com/manual/tutorial/query-arrays/)
 - Add Auth Middleware: Distinguish between user roles: just admins can reach routes, that are now protected, but anyone can create a user (By handing the role to the jwt claims). Create a default admin user on start.
 - Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
 - Implement file upload
