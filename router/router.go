@@ -25,9 +25,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// User
 	user := api.Group("/user")
-	user.Get("/", handler.GetUsers) // after testing: add middleware for admins only
+	user.Get("/", handler.GetUsers)
 	user.Post("/", handler.CreateUser)
-	user.Get("/:id", handler.GetUser) // add middleware.Protected() with check for isValidToken or don't return password
+	user.Get("/:id", handler.GetUser)
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 

@@ -156,7 +156,7 @@ func isValidUser(id string, p string) bool {
 	if err != nil || user.Username == "" {
 		return false
 	}
-	pw, err := controller.GetUserPassword(id)
+	pw, err := controller.GetUserPasswordHash(id)
 	if err != nil {
 		return false
 	}

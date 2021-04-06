@@ -120,7 +120,7 @@ func GetUserByUsername(u string) (*model.UserOutput, error) {
 }
 
 // Return hashed Password of User with provided ID
-func GetUserPassword(id string) (string, error) {
+func GetUserPasswordHash(id string) (string, error) {
 	type userPassword struct {
 		Password string `bson:"password"`
 	}

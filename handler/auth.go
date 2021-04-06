@@ -60,8 +60,7 @@ func Login(c *fiber.Ctx) error {
 		}
 	}
 
-	pw, err := controller.GetUserPassword(ud.ID.Hex())
-
+	pw, err := controller.GetUserPasswordHash(ud.ID.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not validate user", "data": nil})
 	}

@@ -57,8 +57,6 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 
 ## TO DO
-- User Handler:
-   - Specify `/api/user/:id/password` route to get the password, if the token belongs to user targeted with `:id`
 - Content Handler:
    - add `PATCH` Method to update of any content entry
    - Query content and types by title/Name, tags, and field-values (via https://docs.mongodb.com/manual/tutorial/query-arrays/)
