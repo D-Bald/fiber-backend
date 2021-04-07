@@ -17,8 +17,8 @@ var (
 		{Key: "typename", Value: "blogpost"},
 		{Key: "collection", Value: "blogposts"},
 		{Key: "field_schema", Value: bson.M{
-			"Description": new(string),
-			"text":        new(string),
+			"description": "string",
+			"text":        "string",
 		},
 		},
 	}
@@ -27,8 +27,8 @@ var (
 		{Key: "typename", Value: "event"},
 		{Key: "collection", Value: "events"},
 		{Key: "field_schema", Value: bson.M{
-			"Description": new(string),
-			"date":        new(time.Time),
+			"description": "string",
+			"date":        "time.Time",
 		},
 		},
 	}
@@ -52,7 +52,7 @@ func InitContentTypes() error {
 			return err
 		}
 	}
-
+	err = nil
 	return err
 }
 
@@ -111,7 +111,7 @@ func GetContentTypeById(id string) (*model.ContentType, error) {
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: ctID}}
+	filter := bson.M{"_id": ctID}
 	return GetContentType(filter)
 }
 
@@ -132,7 +132,7 @@ func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: ctID}}
+	filter := bson.M{"_id": ctID}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -142,8 +142,8 @@ func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 
 // Validator
 
-func IsValidContentCollection(col string) bool {
-	filter := bson.D{{Key: "collection", Value: col}}
+func IsValidContentCollection(coll string) bool {
+	filter := bson.M{"collection": coll}
 	if _, err := GetContentType(filter); err != nil {
 		return false
 	} else {

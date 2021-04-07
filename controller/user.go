@@ -29,6 +29,7 @@ func InitAdminUser() error {
 		if err != nil {
 			return err
 		}
+
 		adminUser := bson.D{
 			{Key: "username", Value: "adminUser"},
 			{Key: "email", Value: "admin@sample.com"},
@@ -103,19 +104,19 @@ func GetUserById(id string) (*model.UserOutput, error) {
 		return nil, err
 	}
 
-	filter := bson.D{{Key: "_id", Value: uID}}
+	filter := bson.M{"_id": uID}
 	return GetUser(filter)
 }
 
 // Return a single user that matches the email input
 func GetUserByEmail(e string) (*model.UserOutput, error) {
-	filter := bson.D{{Key: "email", Value: e}}
+	filter := bson.M{"email": e}
 	return GetUser(filter)
 }
 
 // Return a single user that matches the username input
 func GetUserByUsername(u string) (*model.UserOutput, error) {
-	filter := bson.D{{Key: "username", Value: u}}
+	filter := bson.M{"username": u}
 	return GetUser(filter)
 }
 
@@ -177,12 +178,12 @@ func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, e
 	}
 
 	// Update user with provided ID: sets field values for "names" and "updatet_at"
-	filter := bson.D{{Key: "_id", Value: userID}}
+	filter := bson.M{"_id": userID}
 	update := bson.D{
 		{Key: "$set", Value: *input},
-		{Key: "$currentDate", Value: bson.D{
-			{Key: "updated_at", Value: true},
-		}},
+		{Key: "$currentDate", Value: bson.M{
+			"updated_at": true},
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -197,7 +198,7 @@ func DeleteUser(id string) (*mongo.DeleteResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: uID}}
+	filter := bson.M{"_id": uID}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

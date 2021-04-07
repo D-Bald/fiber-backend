@@ -47,7 +47,11 @@ func SetupRoutes(app *fiber.App) {
 		}
 	})
 	content.Get("/", handler.GetAllContentEntries)
-	content.Post("/", middleware.Protected(), handler.CreateContent) // Protection must be changed, if non-users should be able to leave comments || seperate 'comments' endpoints?
-	content.Get("/:id", handler.GetContent)
+	content.Post("/", middleware.Protected(), handler.CreateContent) // Protection must be changed, if non-users should be able to leave comments => Add admin only middleware here.
+	// Query contents by different Paramters
+	content.Get("/*", handler.GetContent)
+	// content.Get("/:id", handler.GetContentById) // Deprecated: content.Get("/id=:id") is used instead
+
+	content.Patch("/:id", handler.UpdateContent) // Add middleware.Protected() after testing. => Add admin only middleware here
 	content.Delete("/:id", middleware.Protected(), handler.DeleteContent)
 }

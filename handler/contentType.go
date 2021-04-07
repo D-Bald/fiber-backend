@@ -11,7 +11,7 @@ import (
 
 // GetAll query all Content Entries
 func GetAllContentTypes(c *fiber.Ctx) error {
-	result, err := controller.GetContentTypes(bson.D{})
+	result, err := controller.GetContentTypes(bson.M{})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err.Error()})
 	}
@@ -44,8 +44,8 @@ func CreateContentType(c *fiber.Ctx) error {
 	}
 
 	// Check if already exists
-	checkTypeName, _ := controller.GetContentType(bson.D{{Key: "typename", Value: ct.TypeName}})
-	checkCollection, _ := controller.GetContentType(bson.D{{Key: "collection", Value: ct.Collection}})
+	checkTypeName, _ := controller.GetContentType(bson.M{"typename": ct.TypeName})
+	checkCollection, _ := controller.GetContentType(bson.M{"collection": ct.Collection})
 	if checkTypeName != nil || checkCollection != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "data": nil})
 	}

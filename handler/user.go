@@ -12,7 +12,7 @@ import (
 
 // GetUsers get all Users
 func GetUsers(c *fiber.Ctx) error {
-	users, err := controller.GetUsers(bson.D{})
+	users, err := controller.GetUsers(bson.M{})
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "data": err.Error()})
 	}

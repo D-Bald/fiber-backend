@@ -18,7 +18,7 @@ func GetContentEntries(coll string, filter interface{}) ([]*model.Content, error
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cursor, err := database.DB.Collection(coll).Find(ctx, bson.D{})
+	cursor, err := database.DB.Collection(coll).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +45,18 @@ func GetContentEntries(coll string, filter interface{}) ([]*model.Content, error
 	return result, nil
 }
 
-// Return a single content entry from collection coll that matches the filter
+// Return a single content entry from collection coll that matches the filter. Filter must be structured in bson types.
 func GetContent(coll string, filter interface{}) (*model.Content, error) {
-	var ct *model.Content
+	var c *model.Content
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := database.DB.Collection(coll).FindOne(ctx, filter).Decode(&ct)
+	err := database.DB.Collection(coll).FindOne(ctx, filter).Decode(&c)
 	if err != nil {
 		return nil, err
 	}
-	return ct, nil
+	return c, nil
 }
 
 // Return Content from collection coll with provided ID
@@ -66,7 +66,7 @@ func GetContentById(coll string, id string) (*model.Content, error) {
 		return nil, err
 	}
 
-	filter := bson.D{{Key: "_id", Value: cID}}
+	filter := bson.M{"_id": cID}
 	return GetContent(coll, filter)
 }
 
@@ -74,13 +74,13 @@ func GetContentById(coll string, id string) (*model.Content, error) {
 func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult, error) {
 	// Get corresponding content type set the ContentType reference.
 	// ct's FieldSchema could be accessed for validation
-	ct, err := GetContentType(bson.D{{Key: "collection", Value: coll}})
+	ct, err := GetContentType(bson.M{"collection": coll})
 	if err != nil {
 		return new(mongo.InsertOneResult), err
 	}
 
 	// Initialize metadata
-	content.Init(ct.ID)
+	content.Init(*ct)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -89,7 +89,26 @@ func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult,
 }
 
 // Update content entry in collection coll with provided Parameters
-// ADD CONTROLLER FOR PATCH HANDLER HERE
+func UpdateContent(coll string, id string, input *model.UpdateContentInput) (*mongo.UpdateResult, error) {
+	cID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return new(mongo.UpdateResult), err
+	}
+
+	// Update user with provided ID: sets field values for "names" and "updatet_at"
+	filter := bson.M{"_id": cID}
+	update := bson.D{
+		{Key: "$set", Value: *input},
+		{Key: "$currentDate", Value: bson.M{
+			"updated_at": true},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return database.DB.Collection(coll).UpdateOne(ctx, filter, update)
+}
 
 // Delete content entry provided ID in DB
 func DeleteContent(coll string, id string) (*mongo.DeleteResult, error) {
@@ -97,7 +116,7 @@ func DeleteContent(coll string, id string) (*mongo.DeleteResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{Key: "_id", Value: cID}}
+	filter := bson.M{"_id": cID}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
