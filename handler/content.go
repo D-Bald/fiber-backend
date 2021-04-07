@@ -38,7 +38,7 @@ func GetContentById(c *fiber.Ctx) error {
 // Query content entries with filter provided in query params
 func GetContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
-	re := regexp.MustCompile(`[a-z\.\_]+=[a-zA-Z0-9\%]+`)
+	re := regexp.MustCompile(`[a-z\_]+=[a-zA-Z0-9\%]+`)
 	filterString := re.FindAllString(c.Params("*"), -1)
 	filter := make(map[string]interface{})
 	for _, v := range filterString {
