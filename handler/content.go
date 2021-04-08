@@ -94,9 +94,9 @@ func UpdateContent(c *fiber.Ctx) error {
 
 	result, err := controller.UpdateContent(coll, id, uci)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update content entry", "data": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully updated", "data": result})
 }
 
 // DeleteContent delete content
