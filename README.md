@@ -41,8 +41,8 @@
 ## Workflows
 ### Create content and content types
 The Content Types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`). Events have custom fields *description* and *date* whereas blogposts come with *description* and *text*.
-If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.
-When you update a content entry custom fields can be reached by specifying it as nested object in the request body. JSON example on route: `http://localhost:3000/api/events/606da00b3b00808b74c418c8`
+If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.</br>
+To update custom fields you have to specify it as nested object in the request body. JSON example on route: `http://localhost:3000/api/events/606da00b3b00808b74c418c8`
 ```
 { "fields": {"description": "foo bar"} }
 ```
