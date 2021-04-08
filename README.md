@@ -108,7 +108,7 @@ Example JSON request body:
 ```
 
 ### Query users and content entries by route parameters
-A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles, add a new Parameter for each (example 4)</br>
+A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles add a new parameter for each (example 4).</br>
 Examples:
    1. `/api/events/title=Title&id=606886f352caea1f9aa86471`
    2. `/api/blogposts/text=Hello%20World`
