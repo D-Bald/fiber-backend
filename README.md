@@ -7,7 +7,10 @@
 - [API](#api)
 - [Workflows](#workflows)
    - [Create content and content types](#create-content-and-content-types)
+   - [Update content entries](#update-content-entries)
    - [Create users and manage roles](#create-users-and-manage-roles)
+   - [Update users](#update-users)
+   - [Query users and content entries by route parameters](#query-users-and-content-entries-by-route-parameters)
 - [Database setup](#database-setup)
 - [TO DO](#to-do)
 - [Thanks to...](#thanks-to...)
@@ -23,30 +26,61 @@
 | `/api/auth/`             | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. If it's successful, then generates a token. |
 | `/api/user/`             | `GET`     | &check;                     | Return all users present in the `users` collection.  |
 |                          | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`.   |
-| `/api/user/*`            | `GET`     | &check;                     | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value. Only the whole field value is matched, so submatches are not supported. Queries for single roles are possible. </br> Examples:</br> 1. `/api/users/id=606886f352caea1f9aa86471`</br> 2. `/api/users/roles=admin`   |
+| `/api/user/*`            | `GET`     | &check;                     | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check;                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
 |                          | `DELETE`  | &check;                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |
 | `/api/contenttypes`      | `GET`     | &cross;                     | Return all content types present in the `contenttypes` collection. |
-|                          | `POST`    | &check; (admin)             | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.</br> By convention the collection should be plural of the typename. The last attribute is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.</br> Example: ```{"typename": "Event", "collection": "events", "field_schema": {"date": "time.Time", "place": "string"}}```  |
+|                          | `POST`    | &check; (admin)             | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.   |
 | `/api/contenttypes/:id`  | `GET`     | &cross;                     | Return content type with id `:id`.   |
 |                          | `DELETE`  | &check; (admin)             | Delete content type with id `:id`.   |
 | `/api/:content`          | `GET`     | &cross;                     | Return all content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.</br> For the previous example: `content` has to be set to `events`.   |
 |                          | `POST`    | &check; (admin)             | Create a new content entry of the content type, where `content` is the corresponding collection.</br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
-| `/api/:content/*`        | `GET`     | &cross;                     | Return content entries filtered by parameters in URL mathing the following regular expression: `[a-z\_]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value. Custom fields can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single Tags are possible. To query multiple tags, add a new Parameter for each (example 3) </br> Examples:</br> 1. `/api/events/title=Title%20Test&id=606886f352caea1f9aa86471`</br> 2. `/api/blogposts/text=Hello%20World`</br> 3. `/api/blogposts/tags=foo&tags=bar`|
+| `/api/:content/*`        | `GET`     | &cross;                     | Return content entries filtered by parameters in URL mathing the following regular expression: `[a-z\_]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check; (admin)             | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
 |                          | `DELETE`  | &check; (admin)             | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
 
-
 ## Workflows
 ### Create content and content types
-The Content Types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`). Events have custom fields *description* and *date* whereas blogposts come with *description* and *text*.
-If you want to create a custom Content Type, first use the `/api/contenttypes`endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.</br>
-To update custom fields you have to specify it as nested object in the request body. JSON example on route: `/api/events/606da00b3b00808b74c418c8`
+The content types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`). Events have custom fields *description* and *date* whereas blogposts come with *description* and *text*. By convention the collection should be plural of the typename.
+If you want to create a custom content type, first use the `/api/contenttypes` endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.</br>
+The last attribute for a new content type, *field_schema*, is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.</br>
+Exapmle JSON request body:
+```
+{
+    "typename": "protected-admin-test",
+    "collection": "protected-admin-test-entries",
+    "field_schema": {
+        "text_field": "string"
+    }
+}
+```
+
+The last attribute for a new content entry, *fields* is a list of key-value pairs specifying name and value of fields, that should match the *field_schema* of the corresponding content type. **A validation is not yet implemented.** </br>
+Example JSON request body:
+```
+{
+    "title": "Blogpost Test",
+    "published": false,
+    "tags": [
+        "foo",
+        "bar"
+    ],
+    "fields": {
+        "description": "Hello world",
+        "date": "2021-04-08T12:00:00+02:00"
+    }
+}
+```
+
+### Update content entries
+To update custom fields you have to specify it as nested object in the request body.</br>
+Example JSON request body:
 ```
 { "fields": {"description": "foo bar"} }
 ```
-Preset fields can be reached directly. JSON example on route `/api/events/606da00b3b00808b74c418c8`:
+
+Preset fields can be reached directly. Example JSON request body:
 ```
 { "tags": ["foo", "bar"] }
 ```
@@ -54,12 +88,32 @@ Preset fields can be reached directly. JSON example on route `/api/events/606da0
 
 ### Create users and manage roles
 The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
-Anybody can create a new user. The role is automatically set to *user*. A user can edit the own data i.e. *username*, *email*, *password*, *names*.
-Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings:
+Anybody can create a new user. The role is automatically set to *user*.</br>
+Example JSON request body:
+```
+{
+    "username": "TestUser",
+    "email": "unique@mail.com",
+    "password":"123",
+    "names":"names",
+}
+```
+
+### Update users
+A user can edit the own data i.e. *username*, *email*, *password*, *names*.
+Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.</br>
+Example JSON request body:
 ```
 { "roles": ["user", "admin"] }
 ```
 
+### Query users and content entries by route parameters
+A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles, add a new Parameter for each (example 4)</br>
+Examples:
+   1. `/api/events/title=Title&id=606886f352caea1f9aa86471`
+   2. `/api/blogposts/text=Hello%20World`
+   3. `/api/users/roles=admin`
+   4. `/api/blogposts/tags=foo&tags=bar`
 
 ## Database setup
 
