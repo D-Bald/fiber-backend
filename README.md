@@ -8,7 +8,7 @@
 - [Workflows](#workflows)
    - [Create content and content types](#create-content-and-content-types)
    - [Update content entries](#update-content-entries)
-   - [Create users and manage roles](#create-users-and-manage-roles)
+   - [Create users](#create-users)
    - [Update users](#update-users)
    - [Query users and content entries by route parameters](#query-users-and-content-entries-by-route-parameters)
 - [Database setup](#database-setup)
@@ -86,7 +86,7 @@ Preset fields can be reached directly. Example JSON request body:
 ```
 
 
-### Create users and manage roles
+### Create users
 The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
 Anybody can create a new user. The role is automatically set to *user*.</br>
 Example JSON request body:
