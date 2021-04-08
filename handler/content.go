@@ -25,6 +25,7 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 }
 
 // Query content by Param 'id'
+// Deprecated: Use GetContent with id in route parameter instead
 func GetContentById(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	content, err := controller.GetContentById(coll, c.Params("id"))
@@ -47,7 +48,7 @@ func GetContent(c *fiber.Ctx) error {
 		if s[0] == `id` {
 			cID, err := primitive.ObjectIDFromHex(s[1])
 			if err != nil {
-				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": err.Error()})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 			}
 			filter["_id"] = cID
 		} else {
@@ -57,7 +58,7 @@ func GetContent(c *fiber.Ctx) error {
 	fmt.Println(filter)
 	result, err := controller.GetContentEntries(coll, filter)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
 }

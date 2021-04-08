@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"fmt"
+	"regexp"
+
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -11,7 +15,7 @@ import (
 )
 
 // GetUsers get all Users
-func GetUsers(c *fiber.Ctx) error {
+func GetAllUsers(c *fiber.Ctx) error {
 	users, err := controller.GetUsers(bson.M{})
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "data": err.Error()})
@@ -19,13 +23,40 @@ func GetUsers(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
 }
 
-// GetUser get a user
-func GetUser(c *fiber.Ctx) error {
+// GetUser get a user by ID
+// Deprecated: Use GetContent with id in route parameter instead
+func GetUserById(c *fiber.Ctx) error {
 	user, err := controller.GetUserById(c.Params("id"))
 	if err != nil || user.Username == "" {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
+}
+
+// Query users with filter provided in query params
+func GetUsers(c *fiber.Ctx) error {
+	re := regexp.MustCompile(`[a-z]+=[a-zA-Z0-9\%]+`)
+	filterString := re.FindAllString(c.Params("*"), -1)
+	filter := make(map[string]interface{})
+	for _, v := range filterString {
+		v = regexp.MustCompile(`%20`).ReplaceAllString(v, " ")
+		s := regexp.MustCompile(`=`).Split(v, -1)
+		if s[0] == `id` {
+			cID, err := primitive.ObjectIDFromHex(s[1])
+			if err != nil {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+			}
+			filter["_id"] = cID
+		} else {
+			filter[s[0]] = s[1]
+		}
+	}
+	fmt.Println(filter)
+	result, err := controller.GetUsers(filter)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+	}
+	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
 }
 
 // CreateUser new user
@@ -136,7 +167,7 @@ func isValidToken(t *jwt.Token, id string) bool {
 
 // Checks if the role claim of the token is `admin`
 func isAdminToken(t *jwt.Token) bool {
-	return t.Claims.(jwt.MapClaims)["admin"] == true
+	return t.Claims.(jwt.MapClaims)["admin"].(bool)
 }
 
 // hasRole takes a string slice of roles and looks for an element in it. If found it will

@@ -45,6 +45,8 @@ func InitAdminUser() error {
 			return err
 		}
 	}
+
+	err = nil
 	return err
 }
 

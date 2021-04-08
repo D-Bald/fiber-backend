@@ -25,18 +25,20 @@ func SetupRoutes(app *fiber.App) {
 
 	// User
 	user := api.Group("/user")
-	user.Get("/", handler.GetUsers)
+	user.Get("/", middleware.Protected(), handler.GetAllUsers)
 	user.Post("/", handler.CreateUser)
-	user.Get("/:id", handler.GetUser)
+	// Query contents by different Paramters
+	user.Get("/*", middleware.Protected(), handler.GetUsers)
+	// user.Get("/:id", handler.GetUserById) // Deprecated: user.Get("/id=:id") is used instead
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
 	// ContentTypes
 	contentTypes := api.Group("/contenttypes")
 	contentTypes.Get("/", handler.GetAllContentTypes)
-	contentTypes.Post("/", middleware.Protected(), handler.CreateContentType)
+	contentTypes.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContentType)
 	contentTypes.Get("/:id", handler.GetContentType)
-	contentTypes.Delete("/:id", middleware.Protected(), handler.DeleteContentType)
+	contentTypes.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContentType)
 
 	// Content
 	content := api.Group("/:content", func(c *fiber.Ctx) error { // `content` has to be a collection
@@ -47,11 +49,11 @@ func SetupRoutes(app *fiber.App) {
 		}
 	})
 	content.Get("/", handler.GetAllContentEntries)
-	content.Post("/", middleware.Protected(), handler.CreateContent) // Protection must be changed, if non-users should be able to leave comments => Add admin only middleware here.
+	content.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContent)
 	// Query contents by different Paramters
 	content.Get("/*", handler.GetContent)
 	// content.Get("/:id", handler.GetContentById) // Deprecated: content.Get("/id=:id") is used instead
 
-	content.Patch("/:id", handler.UpdateContent) // Add middleware.Protected() after testing. => Add admin only middleware here
-	content.Delete("/:id", middleware.Protected(), handler.DeleteContent)
+	content.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateContent)
+	content.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContent)
 }
