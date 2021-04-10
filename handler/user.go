@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/D-Bald/fiber-backend/controller"
@@ -51,7 +50,7 @@ func GetUsers(c *fiber.Ctx) error {
 			filter[s[0]] = s[1]
 		}
 	}
-	fmt.Println(filter)
+
 	result, err := controller.GetUsers(filter)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})

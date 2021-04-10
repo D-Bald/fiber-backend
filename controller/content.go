@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
@@ -12,8 +13,9 @@ import (
 )
 
 // Return all content entries from collection coll that match the filter
-func GetContentEntries(coll string, filter interface{}) ([]*model.Content, error) {
+func GetContent(coll string, filter interface{}) ([]*model.Content, error) {
 	var result []*model.Content
+	fmt.Println(filter)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -46,7 +48,7 @@ func GetContentEntries(coll string, filter interface{}) ([]*model.Content, error
 }
 
 // Return a single content entry from collection coll that matches the filter. Filter must be structured in bson types.
-func GetContent(coll string, filter interface{}) (*model.Content, error) {
+func GetContentEntry(coll string, filter interface{}) (*model.Content, error) {
 	var c *model.Content
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -67,7 +69,7 @@ func GetContentById(coll string, id string) (*model.Content, error) {
 	}
 
 	filter := bson.M{"_id": cID}
-	return GetContent(coll, filter)
+	return GetContentEntry(coll, filter)
 }
 
 // Insert content entry in collection coll with provided Parameters

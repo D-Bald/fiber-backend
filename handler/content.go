@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/D-Bald/fiber-backend/controller"
@@ -16,7 +15,7 @@ import (
 func GetAllContentEntries(c *fiber.Ctx) error {
 	coll := c.Params("content")
 
-	result, err := controller.GetContentEntries(coll, bson.M{})
+	result, err := controller.GetContent(coll, bson.M{})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err.Error()})
 	}
@@ -37,6 +36,8 @@ func GetContentById(c *fiber.Ctx) error {
 }
 
 // Query content entries with filter provided in query params
+// Solution with regular expressions
+// Every Value is Parsed as string type.
 func GetContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	re := regexp.MustCompile(`[a-z\_]+=[a-zA-Z0-9\%]+`)
@@ -55,13 +56,34 @@ func GetContent(c *fiber.Ctx) error {
 			filter[s[0]] = s[1]
 		}
 	}
-	fmt.Println(filter)
-	result, err := controller.GetContentEntries(coll, filter)
+
+	result, err := controller.GetContent(coll, filter)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
 }
+
+// // Query content entries with filter provided in query params
+// // Solution with QueryParser
+// // DOES NOT WORK BECAUSE FIELDS ARE INITIALIZED WITH NIL VALUES WHICH DOES NOT MATCH ANY DOCUMENT => USE c.Query("KEY") for single keys?
+// func GetContent(c *fiber.Ctx) error {
+// 	coll := c.Params("content")
+// 	filter := new(model.Content)
+
+// 	// parse input
+// 	if err := c.QueryParser(filter); err != nil {
+// 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+// 	}
+
+// 	// get content from DB
+// 	result, err := controller.GetContent(coll, filter)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+// 	}
+
+// 	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
+// }
 
 // CreateContent new content
 // Collection is created by mongoDB automatically on first insert call

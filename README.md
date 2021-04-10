@@ -126,9 +126,10 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 ## TO DO
 
+- GetContent handler: check for ((f|F)alse)|((t|T)rue) regex to parse bool.
 - Implement file upload
 - Configuration via external config file
-- Validation schemas for Input Data (https://docs.gofiber.io/guide/validation)
+- Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
 ## Thanks to...
 
