@@ -74,6 +74,7 @@ Example JSON request body:
 ```
 
 ### Update content entries
+Every update request updates the field `published`, so it has to be set to `true` in any request after that this state is wanted. This is due to poor use of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore the flag is not set for this field and it can't be omitted or the omitted the field is automatically set to false. 
 To update custom fields you have to specify it as nested object in the request body.</br>
 Example JSON request body:
 ```
@@ -82,7 +83,10 @@ Example JSON request body:
 
 Preset fields can be reached directly. Example JSON request body:
 ```
-{ "tags": ["foo", "bar"] }
+{
+    "tags": ["foo", "bar"],
+    "published": true
+}
 ```
 
 
@@ -126,7 +130,6 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 
 ## TO DO
 
-- GetContent handler: check for ((f|F)alse)|((t|T)rue) regex to parse bool.
 - Implement file upload
 - Configuration via external config file
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)

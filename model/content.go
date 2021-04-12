@@ -29,7 +29,7 @@ func (c *Content) Init(ct ContentType) {
 // Fields that can be updated through API endpoints
 type UpdateContentInput struct {
 	Title     string                 `bson:"title,omitempty" json:"title" xml:"title" form:"title"`
-	Published bool                   `bson:"published,omitempty" json:"published" xml:"published" form:"published"`
+	Published bool                   `bson:"published" json:"published" xml:"published" form:"published"`
 	Tags      []string               `bson:"tags,omitempty" json:"tags" xml:"tags" form:"tags"`
 	Fields    map[string]interface{} `bson:"fields,inline,omitempty" json:"fields" xml:"fields" form:"fields"`
 }

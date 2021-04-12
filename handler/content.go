@@ -46,13 +46,23 @@ func GetContent(c *fiber.Ctx) error {
 	for _, v := range filterString {
 		v = regexp.MustCompile(`%20`).ReplaceAllString(v, " ")
 		s := regexp.MustCompile(`=`).Split(v, -1)
-		if s[0] == `id` {
+
+		// check, if the current param is boolean to parse it in a boolean output if this is the case
+		boolMatch, boolOutput, err := parseBoolean(s[1])
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+		}
+		switch {
+		case s[0] == `id`:
 			cID, err := primitive.ObjectIDFromHex(s[1])
 			if err != nil {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 			}
-			filter["_id"] = cID
-		} else {
+			filter[s[0]] = cID
+
+		case boolMatch:
+			filter[s[0]] = boolOutput
+		default:
 			filter[s[0]] = s[1]
 		}
 	}
@@ -135,4 +145,24 @@ func DeleteContent(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully deleted", "data": result})
+}
+
+// if input s is the string of a boolean keyword, return that keyword
+// false is default, but if isMatch is false, the output is not valid.
+func parseBoolean(s string) (isMatch bool, output bool, err error) {
+	t, err := regexp.MatchString(`((t|T)rue)`, s)
+	if err != nil {
+		return false, false, err
+	}
+	if t {
+		return true, true, nil
+	}
+	f, err := regexp.MatchString(`(f|F)alse`, s)
+	if err != nil {
+		return false, false, err
+	}
+	if f {
+		return true, false, nil
+	}
+	return false, false, err
 }
