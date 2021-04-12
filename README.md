@@ -74,7 +74,7 @@ Example JSON request body:
 ```
 
 ### Update content entries
-Every update request updates the field `published`, so it has to be set to `true` in any request after that this state is wanted. This is due to poor use of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore the flag is not set for this field and it can't be omitted or the omitted the field is automatically set to false. 
+Every `PATCH` request updates the field `published`, so it has to be set to `true` in any request if this state is wanted after. This is due to poor handling of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore this flag is not used for this field and it can't be omitted or the omitted field is automatically set to false.</br>
 To update custom fields you have to specify it as nested object in the request body.</br>
 Example JSON request body:
 ```
