@@ -21,6 +21,7 @@ func Login(c *fiber.Ctx) error {
 		ID       primitive.ObjectID `json:"id"`
 		Username string             `json:"username"`
 		Email    string             `json:"email"`
+		Names    string             `json:"names"`
 		Roles    []string           `json:"roles"`
 	}
 	var input LoginInput
@@ -49,6 +50,7 @@ func Login(c *fiber.Ctx) error {
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
+			Names:    user.Names,
 			Roles:    user.Roles,
 		}
 	} else {
@@ -56,6 +58,7 @@ func Login(c *fiber.Ctx) error {
 			ID:       email.ID,
 			Username: email.Username,
 			Email:    email.Email,
+			Names:    email.Names,
 			Roles:    email.Roles,
 		}
 	}
@@ -82,5 +85,10 @@ func Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
+	type response struct {
+		token string
+		user  UserData
+	}
+	resp := response{t, ud}
+	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": resp})
 }
