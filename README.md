@@ -23,7 +23,7 @@
 | :----------------------- | :-------- | :-------------------------- | :---------------------------------------- |
 | `/api/sample`            | `GET`     | &cross;                     | Health Check |
 |                          | `POST`    | &cross;                     | Create a new Sample Entry in the `samples` collection. Specify two string fields in the request body.   |
-| `/api/auth/`             | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. If it's successful, then generates a token. |
+| `/api/auth/login`        | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. If it's successful, then generates a token. |
 | `/api/user/`             | `GET`     | &check;                     | Return all users present in the `users` collection.  |
 |                          | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`.   |
 | `/api/user/*`            | `GET`     | &check;                     | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
