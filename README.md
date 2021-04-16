@@ -23,9 +23,9 @@
 | :----------------------- | :-------- | :-------------------------- | :---------------------------------------- |
 | `/api/sample`            | `GET`     | &cross;                     | Health Check |
 |                          | `POST`    | &cross;                     | Create a new Sample Entry in the `samples` collection. Specify two string fields in the request body.   |
-| `/api/auth/login`        | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. If it's successful, then generates a token. |
+| `/api/auth/login`        | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
 | `/api/user/`             | `GET`     | &check;                     | Return all users present in the `users` collection.  |
-|                          | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`.   |
+|                          | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
 | `/api/user/*`            | `GET`     | &check;                     | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check;                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
 |                          | `DELETE`  | &check;                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |

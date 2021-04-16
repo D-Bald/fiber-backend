@@ -2,7 +2,9 @@ package handler
 
 import (
 	"regexp"
+	"time"
 
+	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -80,7 +82,21 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "data": err.Error()})
 	}
 
-	// Response
+	// Token for response
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = user.Username
+	claims["user_id"] = user.ID.Hex()
+	claims["admin"] = hasRole(user.Roles, "admin")
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	t, err := token.SignedString([]byte(config.Config("SECRET")))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// User for response
 	newUser := model.UserOutput{
 		ID:       user.ID,
 		Email:    user.Email,
@@ -88,8 +104,7 @@ func CreateUser(c *fiber.Ctx) error {
 		Names:    user.Names,
 		Roles:    user.Roles,
 	}
-
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "token": t, "user ": newUser})
 }
 
 // Update user with parameters from request body

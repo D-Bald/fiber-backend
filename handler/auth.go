@@ -69,7 +69,7 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	if !checkPasswordHash(pass, pw) {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Invalid password", "data": nil})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "invalid password", "data": nil})
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -85,10 +85,6 @@ func Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	type response struct {
-		token string
-		user  UserData
-	}
-	resp := response{t, ud}
-	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": resp})
+	// return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": fiber.Map{"token": t, "user": ud}})
+	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "token": t, "user": ud})
 }

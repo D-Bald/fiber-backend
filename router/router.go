@@ -26,7 +26,7 @@ func SetupRoutes(app *fiber.App) {
 	// User endpoints
 	user := api.Group("/user")
 	user.Get("/", middleware.Protected(), handler.GetAllUsers)
-	user.Post("/", handler.CreateUser)
+	user.Post("/", handler.CreateUser, handler.Login)
 	// Query contents by different Paramters
 	user.Get("/*", middleware.Protected(), handler.GetUsers) // Solution with regular expressions
 	// user.Get("/:id", handler.GetUserById) // Deprecated: use query with parameter "id" instead
