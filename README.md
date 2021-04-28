@@ -91,7 +91,7 @@ Preset fields can be reached directly. Example JSON request body:
 
 
 ### Create users
-The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
+The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file in the root direcory of the executable.
 Anybody can create a new user. The role is automatically set to *user*.</br>
 Example JSON request body:
 ```
@@ -121,15 +121,14 @@ Examples:
 
 ## Database setup
 
-Configuration via config file not available yet.
-
-In this repo the mongoDB is not self-hostet, so URI for Atlas ist hardcoded except DB_USER, DB_NAME and credentials.
+In this repo the mongoDB is not self-hostet, so URI for Atlas ist hardcoded except DB_USER, DB_NAME and credentials which are read from an .env file in the root directory of the executable.
 
 For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fiber-backend/blob/a919ea78383a1d3fa7c30cd6498f68f72fb88620/database/connect.go#L16)
 
 
 ## TO DO
 
+- Containerize backend and mongoDB
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
