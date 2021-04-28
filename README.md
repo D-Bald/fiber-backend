@@ -131,7 +131,6 @@ For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fibe
 ## TO DO
 
 - Implement file upload
-- Configuration via external config file
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
 ## Thanks to...

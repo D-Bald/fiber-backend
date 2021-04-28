@@ -1,6 +1,6 @@
 module github.com/D-Bald/fiber-backend
 
-go 1.15
+go 1.16
 
 require (
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible

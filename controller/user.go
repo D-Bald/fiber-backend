@@ -23,7 +23,7 @@ func hashedAdminPassword() (string, error) {
 }
 
 func InitAdminUser() error {
-	_, err := GetUsers(bson.D{{Key: "roles", Value: "admin"}})
+	_, err := GetUsers(bson.M{"roles": "admin"})
 	if err != nil {
 		hash, err := hashedAdminPassword()
 		if err != nil {
