@@ -25,7 +25,7 @@
 |                          | `POST`    | &cross;                     | `sample`                     | Create a new Sample Entry in the `samples` collection. Specify two string fields in the request body.   |
 | `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
 | `/api/user/`             | `GET`     | &check;                     | `user`                       | Return all users present in the `users` collection.  |
-|                          | `POST`    | &cross;                     | `user`                       | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
+|                          | `POST`    | &cross;                     | `token`, `user`              | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
 | `/api/user/*`            | `GET`     | &check;                     | `user`                       | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check;                     | `result`                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
 |                          | `DELETE`  | &check;                     | `result`                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |
@@ -39,7 +39,7 @@
 |                          | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
 |                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
-<sup>*</sup> `status` and `message` are returned on every Request.
+<sup>*</sup> `status` and `message` are returned on every request.
 
 ## Workflows
 ### Create content and content types
