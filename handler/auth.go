@@ -28,12 +28,12 @@ func Login(c *fiber.Ctx) error {
 	var ud UserData
 
 	if err := c.BodyParser(&input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "data": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "token": nil, "user": nil})
 	}
 
 	identity := input.Identity
 	if identity == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "No Identity provided on Login", "data": nil})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "No Identity provided on Login", "token": nil, "user": nil})
 	}
 	pass := input.Password
 
@@ -42,7 +42,7 @@ func Login(c *fiber.Ctx) error {
 	user, _ := controller.GetUserByUsername(identity)
 
 	if email == nil && user == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "data": nil})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "token": nil, "user": nil})
 	}
 
 	if email == nil {
@@ -65,11 +65,11 @@ func Login(c *fiber.Ctx) error {
 
 	pw, err := controller.GetUserPasswordHash(ud.ID.Hex())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not validate user", "data": nil})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not validate user", "token": nil, "user": nil})
 	}
 
 	if !checkPasswordHash(pass, pw) {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "invalid password", "data": nil})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "invalid password", "token": nil, "user": nil})
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)

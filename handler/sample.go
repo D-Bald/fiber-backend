@@ -16,7 +16,7 @@ type Sample struct {
 func CreateSample(c *fiber.Ctx) error {
 	sample := new(Sample)
 	if err := c.BodyParser(sample); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create content", "sample": err.Error()})
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -25,10 +25,10 @@ func CreateSample(c *fiber.Ctx) error {
 	if _, err := database.DB.Collection("samples").InsertOne(ctx, &sample); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create sample", "data": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": sample})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "sample": sample})
 }
 
 func GetSample(c *fiber.Ctx) error {
 	sample := Sample{"Hello", "World"}
-	return c.JSON(fiber.Map{"status": "success", "message": "GET Handler", "data": sample})
+	return c.JSON(fiber.Map{"status": "success", "message": "GET Handler", "sample": sample})
 }

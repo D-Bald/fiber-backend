@@ -13,19 +13,19 @@ import (
 func GetAllContentTypes(c *fiber.Ctx) error {
 	result, err := controller.GetContentTypes(bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "contenttype": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "All Content Types", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "All Content Types", "contenttype": result})
 }
 
-// GetContent query content
+// GetContentType query contenttypes by ID
 func GetContentType(c *fiber.Ctx) error {
 	ct, err := controller.GetContentTypeById(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "contenttype": err.Error()})
 
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Content Type found", "data": ct})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content Type found", "contenttype": ct})
 }
 
 // CreateContent
@@ -40,19 +40,19 @@ func CreateContentType(c *fiber.Ctx) error {
 	ct := new(model.ContentType)
 	// Parse input
 	if err := c.BodyParser(ct); err != nil || ct.TypeName == "" || ct.Collection == "" {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "contenttype": err.Error()})
 	}
 
 	// Check if already exists
 	checkTypeName, _ := controller.GetContentType(bson.M{"typename": ct.TypeName})
 	checkCollection, _ := controller.GetContentType(bson.M{"collection": ct.Collection})
 	if checkTypeName != nil || checkCollection != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "data": nil})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "contenttype": nil})
 	}
 
 	// Insert in DB
 	if _, err := controller.CreateContentType(ct); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "contenttype": err.Error()})
 	}
 
 	// Response
@@ -62,7 +62,7 @@ func CreateContentType(c *fiber.Ctx) error {
 		Collection:  ct.Collection,
 		FieldSchema: ct.FieldSchema,
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "data": newCt})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "contenttype": newCt})
 }
 
 // DeleteContent delete content
@@ -71,14 +71,14 @@ func DeleteContentType(c *fiber.Ctx) error {
 
 	// Check if content type with given id exists
 	if _, err := controller.GetContentTypeById(id); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content Type not found", "result": err.Error()})
 	}
 
 	// Delete in DB
 	result, err := controller.DeleteContentType(id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete Content Type", "result": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully deleted", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully deleted", "result": result})
 }

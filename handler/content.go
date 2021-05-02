@@ -17,10 +17,10 @@ func GetAllContentEntries(c *fiber.Ctx) error {
 
 	result, err := controller.GetContent(coll, bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "content": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "All Content Entries", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "All Content Entries", "content": result})
 }
 
 // Query content by Param 'id'
@@ -29,10 +29,10 @@ func GetContentById(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	content, err := controller.GetContentById(coll, c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "content": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": content})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "content": content})
 }
 
 // Query content entries with filter provided in query params
@@ -50,13 +50,13 @@ func GetContent(c *fiber.Ctx) error {
 		// check, if the current param is boolean to parse it in a boolean output if this is the case
 		boolMatch, boolOutput, err := parseBoolean(s[1])
 		if err != nil {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "content": err.Error()})
 		}
 		switch {
 		case s[0] == `id`:
 			cID, err := primitive.ObjectIDFromHex(s[1])
 			if err != nil {
-				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "content": err.Error()})
 			}
 			filter[s[0]] = cID
 
@@ -69,9 +69,9 @@ func GetContent(c *fiber.Ctx) error {
 
 	result, err := controller.GetContent(coll, filter)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "content": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "content": result})
 }
 
 // // Query content entries with filter provided in query params
@@ -101,16 +101,16 @@ func CreateContent(c *fiber.Ctx) error {
 	content := new(model.Content)
 	// Parse input
 	if err := c.BodyParser(content); err != nil || content.Title == "" || content.Fields == nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create content", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create content", "content": err.Error()})
 	}
 
 	// Get collection from route params
 	coll := c.Params("content")
 
 	if _, err := controller.CreateContent(coll, content); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content", "content": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "data": content})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created content", "content": content})
 }
 
 // Update content entry with parameters from request body
@@ -121,14 +121,14 @@ func UpdateContent(c *fiber.Ctx) error {
 
 	uci := new(model.UpdateContentInput)
 	if err := c.BodyParser(uci); err != nil || uci == nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
 	result, err := controller.UpdateContent(coll, id, uci)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update content entry", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update content entry", "result": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully updated", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully updated", "result": result})
 }
 
 // DeleteContent delete content
@@ -136,15 +136,15 @@ func DeleteContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	id := c.Params("id")
 	if _, err := controller.GetContentById(coll, id); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "data": nil})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Content not found", "result": err.Error()})
 	}
 
 	result, err := controller.DeleteContent(coll, id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete Content", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete Content", "result": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully deleted", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content successfully deleted", "result": result})
 }
 
 // if input s is the string of a boolean keyword, return that keyword

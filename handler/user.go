@@ -19,9 +19,9 @@ import (
 func GetAllUsers(c *fiber.Ctx) error {
 	users, err := controller.GetUsers(bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "user": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "data": users})
+	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "user": users})
 }
 
 // GetUser get a user by ID
@@ -29,9 +29,9 @@ func GetAllUsers(c *fiber.Ctx) error {
 func GetUserById(c *fiber.Ctx) error {
 	user, err := controller.GetUserById(c.Params("id"))
 	if err != nil || user.Username == "" {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "user": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
+	return c.JSON(fiber.Map{"status": "success", "message": "User found", "user": user})
 }
 
 // Query users with filter provided in query params
@@ -45,7 +45,7 @@ func GetUsers(c *fiber.Ctx) error {
 		if s[0] == `id` {
 			cID, err := primitive.ObjectIDFromHex(s[1])
 			if err != nil {
-				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
 			}
 			filter["_id"] = cID
 		} else {
@@ -55,9 +55,9 @@ func GetUsers(c *fiber.Ctx) error {
 
 	result, err := controller.GetUsers(filter)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "user": result})
 }
 
 // CreateUser new user
@@ -66,20 +66,20 @@ func CreateUser(c *fiber.Ctx) error {
 
 	// Parse input
 	if err := c.BodyParser(user); err != nil || user.Username == "" || user.Email == "" || user.Password == "" {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "user": err.Error()})
 	}
 
 	// Check if already exists
 	if u, _ := controller.GetUserByUsername(user.Username); u != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "user": nil})
 	}
 	if u, _ := controller.GetUserByEmail(user.Email); u != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "user": nil})
 	}
 
 	// Insert in DB
 	if _, err := controller.CreateUser(user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
 
 	// Token for response
@@ -113,35 +113,35 @@ func UpdateUser(c *fiber.Ctx) error {
 	token := c.Locals("user").(*jwt.Token)
 
 	if !isValidToken(token, id) && !isAdminToken(token) {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "result": nil})
 	}
 
 	uui := new(model.UpdateUserInput)
 	if err := c.BodyParser(uui); err != nil || uui == nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
 	if uui.Username != "" {
 		if u, _ := controller.GetUserByUsername(uui.Username); u != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "data": nil})
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "result": nil})
 		}
 	}
 	if uui.Email != "" {
 		if u, _ := controller.GetUserByEmail(uui.Email); u != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "data": nil})
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "result": nil})
 		}
 	}
 	if uui.Roles != nil {
 		if !isAdminToken(token) {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "data": nil})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "result": nil})
 		}
 	}
 
 	result, err := controller.UpdateUser(id, uui)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "result": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "result": result})
 }
 
 // DeleteUser delete user
@@ -151,25 +151,25 @@ func DeleteUser(c *fiber.Ctx) error {
 	}
 	var pi PasswordInput
 	if err := c.BodyParser(&pi); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err.Error()})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
 	id := c.Params("id")
 	token := c.Locals("user").(*jwt.Token)
 
 	if !isValidToken(token, id) && !isAdminToken(token) {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "result": nil})
 	}
 
 	if !isValidUser(id, pi.Password) && !isAdminToken(token) {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Not valid user", "result": nil})
 	}
 
 	result, err := controller.DeleteUser(id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete User", "result": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "result": result})
 }
 
 // Validators

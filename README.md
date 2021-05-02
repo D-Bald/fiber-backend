@@ -19,26 +19,27 @@
 
 ## API
 
-| Endpoint                 | Method    | Authentification required   | Description  |
-| :----------------------- | :-------- | :-------------------------- | :---------------------------------------- |
-| `/api/sample`            | `GET`     | &cross;                     | Health Check |
-|                          | `POST`    | &cross;                     | Create a new Sample Entry in the `samples` collection. Specify two string fields in the request body.   |
-| `/api/auth/login`        | `POST`    | &cross;                     | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
-| `/api/user/`             | `GET`     | &check;                     | Return all users present in the `users` collection.  |
-|                          | `POST`    | &cross;                     | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
-| `/api/user/*`            | `GET`     | &check;                     | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
-|                          | `PATCH`   | &check;                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
-|                          | `DELETE`  | &check;                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |
-| `/api/contenttypes`      | `GET`     | &cross;                     | Return all content types present in the `contenttypes` collection. |
-|                          | `POST`    | &check; (admin)             | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.   |
-| `/api/contenttypes/:id`  | `GET`     | &cross;                     | Return content type with id `:id`.   |
-|                          | `DELETE`  | &check; (admin)             | Delete content type with id `:id`.   |
-| `/api/:content`          | `GET`     | &cross;                     | Return all content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.</br> For the previous example: `content` has to be set to `events`.   |
-|                          | `POST`    | &check; (admin)             | Create a new content entry of the content type, where `content` is the corresponding collection.</br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
-| `/api/:content/*`        | `GET`     | &cross;                     | Return content entries filtered by parameters in URL mathing the following regular expression: `[a-z\_]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
-|                          | `PATCH`   | &check; (admin)             | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
-|                          | `DELETE`  | &check; (admin)             | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
+| Endpoint                 | Method    | Authentification required   | Response Fields<sup>*</sup>  | Description  |
+| :----------------------- | :-------- | :-------------------------- | :--------------------------- | :----------- |
+| `/api/sample`            | `GET`     | &cross;                     | `sample`                     | Health Check |
+|                          | `POST`    | &cross;                     | `sample`                     | Create a new Sample Entry in the `samples` collection. Specify two string fields in the request body.   |
+| `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
+| `/api/user/`             | `GET`     | &check;                     | `user`                       | Return all users present in the `users` collection.  |
+|                          | `POST`    | &cross;                     | `user`                       | Create a new user.</br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
+| `/api/user/*`            | `GET`     | &check;                     | `user`                       | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
+|                          | `PATCH`   | &check;                     | `result`                     | Update user with id `id`. </br> If you want to update `role`, you have to be authenticated with a admin-user.  |
+|                          | `DELETE`  | &check;                     | `result`                     | Delete user with id `id`.</br> Specify user´s password in the request body.   |
+| `/api/contenttypes`      | `GET`     | &cross;                     | `contenttype`                | Return all content types present in the `contenttypes` collection. |
+|                          | `POST`    | &check; (admin)             | `contenttype`                | Create a new content type.</br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.   |
+| `/api/contenttypes/:id`  | `GET`     | &cross;                     | `contenttype`                | Return content type with id `:id`.   |
+|                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content type with id `:id`.   |
+| `/api/:content`          | `GET`     | &cross;                     | `content`                    | Return all content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.</br> For the previous example: `content` has to be set to `events`.   |
+|                          | `POST`    | &check; (admin)             | `content`                    | Create a new content entry of the content type, where `content` is the corresponding collection.</br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
+| `/api/:content/*`        | `GET`     | &cross;                     | `content`                    | Return content entries filtered by parameters in URL mathing the following regular expression: `[a-z\_]+=[a-zA-Z0-9\%]+`</br> The first group represents the search key and the second the search value.  |
+|                          | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
+|                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
+<sup>*</sup> `status` and `message` are returned on every Request.
 
 ## Workflows
 ### Create content and content types
