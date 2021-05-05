@@ -46,14 +46,6 @@ services:
     fiber-backend:
         build: .
         container_name: fiber-backend
-        # environment:
-        #     - DB_USER=${DB_USER}
-        #     - DB_USER_PASSWORD=${DB_USER_PASSWORD}
-        #     - DB_NAME=${DB_NAME}
-        #     - MONGO_PORT=${MONGO_PORT}
-        #     - FIBER_PORT=${FIBER_PORT}
-        #     - SECRET=${SECRET}
-        #     - ADMIN_PASSWORD=${ADMIN_PASSWORD}
         depends_on:
             - mongodb
         networks:
