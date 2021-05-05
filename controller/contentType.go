@@ -29,6 +29,7 @@ var (
 		{Key: "field_schema", Value: bson.M{
 			"description": "string",
 			"date":        "time.Time",
+			"place":       "string",
 		},
 		},
 	}

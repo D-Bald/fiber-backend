@@ -13,12 +13,23 @@ import (
 
 // Database settings (insert your own database name and connection URI)
 var dbName = config.Config("DB_NAME")
-var mongoURI = fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", config.Config("DB_USER"), config.Config("DB_USER_PASSWORD"), dbName)
+var mongoAtlasURI = fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", config.Config("DB_USER"), config.Config("DB_USER_PASSWORD"), dbName)
+var mongoDockerURI = fmt.Sprintf("mongodb://localhost/%s", config.Config("DB_NAME"))
 
 func Connect() error {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
-	if err != nil {
-		return err
+	var client *mongo.Client
+	var err error
+	switch config.Config("HOSTED") {
+	case "ATLAS":
+		client, err = mongo.NewClient(options.Client().ApplyURI(mongoAtlasURI))
+		if err != nil {
+			return err
+		}
+	case "DOCKER":
+		client, err = mongo.NewClient(options.Client().ApplyURI(mongoDockerURI))
+		if err != nil {
+			return err
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

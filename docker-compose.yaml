@@ -1,0 +1,56 @@
+version: "3.8"
+services:
+    mongodb:
+        image: mongo
+        container_name: mongodb
+        environment:
+        - MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+        - MONGO_INITDB_ROOT_PASSWORD: ${DB_USER_PASSWORD}
+        - MONGO_INITDB_DATABASE: ${DB_NAME}
+        volumes: 
+            - mongodb-data: /data/db
+        networks:
+            - mongodb_network
+        ports:
+            - ${PORT}:${PORT}
+        healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:${PORT}/test --quiet
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        restart: unless-stopped
+
+    mongo-express:
+        image: mongo-express
+        container_name: mongo-express
+        environment:
+            - ME_CONFIG_MONGODB_SERVER=mongodb
+            - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+            - ME_CONFIG_MONGODB_ADMINUSERNAME=${DB_USER}
+            - ME_CONFIG_MONGODB_ADMINPASSWORD=${DB_USER_PASSWORD}
+            - ME_CONFIG_BASICAUTH_USERNAME=${DB_USER}
+            - ME_CONFIG_BASICAUTH_PASSWORD=${DB_USER_PASSWORD}
+        volumes:
+            - mongodb-data
+        depends_on:
+            - mongodb
+        networks:
+            - mongodb_network
+        ports:
+            - 8081:8081
+        healthcheck:
+            test:  wget --quiet --tries=3 --spider http://${DB_USER}:${DB_USER_PASSWORD}@10.10.10.60:8081 || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        restart: unless-stopped
+
+volumes:
+    mongodb-data:
+        name: mongodb-data
+
+networks:
+    mongodb_network:
+        name: mongodb_network
+
+

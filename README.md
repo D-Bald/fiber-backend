@@ -124,6 +124,10 @@ Examples:
 
 In this repo the mongoDB is not self-hostet, so URI for Atlas ist hardcoded except DB_USER, DB_NAME and credentials which are read from an .env file in the root directory of the executable.
 
+NEW: `HOSTED` variable in .env file to indicate either `ATLAS` or `DOCKER` as database host-setup
+
+for putting up the docker database run the [*docker-compose.yaml*]()
+
 For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fiber-backend/blob/a919ea78383a1d3fa7c30cd6498f68f72fb88620/database/connect.go#L16)
 
 
