@@ -57,7 +57,7 @@ services:
         depends_on:
             - mongodb
         networks:
-            - host
+            - mongodb_network
         ports:
             -  ${FIBER_PORT}:${FIBER_PORT}
         restart: unless-stopped
