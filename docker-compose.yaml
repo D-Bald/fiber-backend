@@ -50,8 +50,6 @@ services:
             - mongodb
         networks:
             - host
-        ports:
-            -  ${FIBER_PORT}:${FIBER_PORT}
         restart: unless-stopped
 volumes:
     mongodb-data:
