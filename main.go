@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
+	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/router"
@@ -34,7 +36,7 @@ func main() {
 	if err := controller.InitAdminUser(); err != nil {
 		log.Fatal(err)
 	}
-
+	// Start app
 	router.SetupRoutes(app)
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(fmt.Sprintf(":%v", config.Config("FIBER_PORT"))))
 }

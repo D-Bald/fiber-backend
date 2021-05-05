@@ -1,20 +1,35 @@
 version: "3.8"
 services:
+    fiber-backend:
+        build: .
+        container_name: fiber-backend
+        environment:
+            DB_USER=${DB_USER}
+            DB_USER_PASSWORD=${DB_USER_PASSWORD}
+            DB_NAME=${DB_NAME}
+            MONGO_PORT=${MONGO_PORT}
+            FIBER_PORT=${FIBER_PORT}
+            SECRET=${SECRET}
+            ADMIN_PASSWORD=${ADMIN_PASSWORD}
+        networks:
+            - mongodb_network
+        ports:
+            -  ${FIBER_PORT}:${FIBER_PORT}
     mongodb:
         image: mongo
         container_name: mongodb
         environment:
-        - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
-        - MONGO_INITDB_ROOT_PASSWORD=${DB_USER_PASSWORD}
-        - MONGO_INITDB_DATABASE=${DB_NAME}
+            - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
+            - MONGO_INITDB_ROOT_PASSWORD=${DB_USER_PASSWORD}
+            - MONGO_INITDB_DATABASE=${DB_NAME}
         volumes: 
             - mongodb-data:/data/db
         networks:
             - mongodb_network
         ports:
-            - ${PORT}:${PORT}
+            - ${MONGO_PORT}:${MONGO_PORT}
         healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:${PORT}/test --quiet
+            test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:${MONGO_PORT}/test --quiet
             interval: 30s
             timeout: 10s
             retries: 3
