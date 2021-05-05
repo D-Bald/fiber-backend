@@ -151,5 +151,5 @@ Examples:
 ## Thanks to...
 
 [go-fiber/recipes/auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
-
 [bmc blogs: How To Run MongoDB as a Docker Container](https://www.bmc.com/blogs/mongodb-docker-container/)
+[Docker: Base image when deploying a GoLang binary in a container (Fabian Lee)](https://fabianlee.org/2018/05/10/docker-packaging-a-golang-version-of-hello-world-in-a-container/)

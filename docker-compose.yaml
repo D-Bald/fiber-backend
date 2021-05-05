@@ -1,20 +1,5 @@
 version: "3.8"
 services:
-    fiber-backend:
-        build: .
-        container_name: fiber-backend
-        environment:
-            DB_USER=${DB_USER}
-            DB_USER_PASSWORD=${DB_USER_PASSWORD}
-            DB_NAME=${DB_NAME}
-            MONGO_PORT=${MONGO_PORT}
-            FIBER_PORT=${FIBER_PORT}
-            SECRET=${SECRET}
-            ADMIN_PASSWORD=${ADMIN_PASSWORD}
-        networks:
-            - mongodb_network
-        ports:
-            -  ${FIBER_PORT}:${FIBER_PORT}
     mongodb:
         image: mongo
         container_name: mongodb
@@ -57,6 +42,24 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
+        restart: unless-stopped
+    fiber-backend:
+        build: .
+        container_name: fiber-backend
+        environment:
+            - DB_USER=${DB_USER}
+            - DB_USER_PASSWORD=${DB_USER_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - MONGO_PORT=${MONGO_PORT}
+            - FIBER_PORT=${FIBER_PORT}
+            - SECRET=${SECRET}
+            - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+        depends_on:
+            - mongodb
+        networks:
+            - mongodb_network
+        ports:
+            -  ${FIBER_PORT}:${FIBER_PORT}
         restart: unless-stopped
 volumes:
     mongodb-data:
