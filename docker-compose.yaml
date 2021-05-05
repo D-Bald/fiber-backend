@@ -46,10 +46,12 @@ services:
     fiber-backend:
         build: .
         container_name: fiber-backend
+        volumes:
+            - mongodb-data
         depends_on:
             - mongodb
         networks:
-            - host
+            - mongodb_network
         restart: unless-stopped
 volumes:
     mongodb-data:
@@ -57,8 +59,5 @@ volumes:
 networks:
     mongodb_network:
         name: mongodb_network
-    host:
-        name: host
-        external: true
 
 
