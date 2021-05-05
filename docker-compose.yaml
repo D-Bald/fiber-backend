@@ -56,8 +56,8 @@ services:
         #     - ADMIN_PASSWORD=${ADMIN_PASSWORD}
         depends_on:
             - mongodb
-        networks:
-            - mongodb_network
+        # networks:
+        #     - mongodb_network
         ports:
             -  ${FIBER_PORT}:${FIBER_PORT}
         restart: unless-stopped
