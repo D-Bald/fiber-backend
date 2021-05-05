@@ -11,7 +11,7 @@
    - [Create users](#create-users)
    - [Update users](#update-users)
    - [Query users and content entries by route parameters](#query-users-and-content-entries-by-route-parameters)
-- [Database setup](#database-setup)
+- [Usage](#usage)
 - [TO DO](#to-do)
 - [Thanks to...](#thanks-to...)
 
@@ -120,20 +120,25 @@ Examples:
    3. `/api/users/roles=admin`
    4. `/api/blogposts/tags=foo&tags=bar`
 
-## Database setup
+## Usage (NOT READY)
+You can run this package on its own by setting the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) accordingly, for exapmle with a Atlas hosted MongoDB Cluster, but using [docker](https://docs.docker.com/engine/install/) and [*docker-compose*](https://docs.docker.com/compose/install/) is the easiest way to deploy all dependencies on a server:
+1. Setup database name, user and password in the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file.
+2. Select `DOCKER` as database host-setup for the `HOSTED` variable in .env file.
+3. Execute the following commands in the root directory of [*docker-compose.yaml*](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
+For putting up the docker database run:
+```
+ docker-compose up -d
+```
+For bringing the containers down run:
+```
+docker-compose down -v
+```
 
-In this repo the mongoDB is not self-hostet, so URI for Atlas ist hardcoded except DB_USER, DB_NAME and credentials which are read from an .env file in the root directory of the executable.
-
-NEW: `HOSTED` variable in .env file to indicate either `ATLAS` or `DOCKER` as database host-setup
-
-for putting up the docker database run the [*docker-compose.yaml*](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml)
-
-For self-hosted DB adjust [mongoURI in this line](https://github.com/D-Bald/fiber-backend/blob/a919ea78383a1d3fa7c30cd6498f68f72fb88620/database/connect.go#L16)
-
+Check the databases with mongo-express on `http://localhost:8081`
 
 ## TO DO
 
-- Containerize backend and mongoDB
+- Containerize backend and add it to the [*docker-compose.yaml*](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml)
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 

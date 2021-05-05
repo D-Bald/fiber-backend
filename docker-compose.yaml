@@ -4,11 +4,11 @@ services:
         image: mongo
         container_name: mongodb
         environment:
-        - MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
-        - MONGO_INITDB_ROOT_PASSWORD: ${DB_USER_PASSWORD}
-        - MONGO_INITDB_DATABASE: ${DB_NAME}
+        - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
+        - MONGO_INITDB_ROOT_PASSWORD=${DB_USER_PASSWORD}
+        - MONGO_INITDB_DATABASE=${DB_NAME}
         volumes: 
-            - mongodb-data: /data/db
+            - mongodb-data:/data/db
         networks:
             - mongodb_network
         ports:
@@ -19,7 +19,6 @@ services:
             timeout: 10s
             retries: 3
         restart: unless-stopped
-
     mongo-express:
         image: mongo-express
         container_name: mongo-express
@@ -44,11 +43,9 @@ services:
             timeout: 10s
             retries: 3
         restart: unless-stopped
-
 volumes:
     mongodb-data:
         name: mongodb-data
-
 networks:
     mongodb_network:
         name: mongodb_network
