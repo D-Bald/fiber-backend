@@ -10,7 +10,9 @@ services:
         volumes: 
             - mongodb-data:/data/db
         networks:
-            - mongodb_network
+            mongodb_network:
+                aliases:
+                    - mongo
         ports:
             - ${MONGO_PORT}:${MONGO_PORT}
         healthcheck:
@@ -46,8 +48,6 @@ services:
     fiber-backend:
         build: .
         container_name: fiber-backend
-        volumes:
-            - mongodb-data
         depends_on:
             - mongodb
         networks:

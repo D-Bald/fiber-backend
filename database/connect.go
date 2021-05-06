@@ -11,27 +11,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Database settings (insert your own database name and connection URI)
+// Database settings (insert your own database host, name and user data)
+var mongoHost = config.Config("MONGO_HOST")
 var dbName = config.Config("DB_NAME")
-var mongoAtlasURI = fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", config.Config("DB_USER"), config.Config("DB_USER_PASSWORD"), dbName)
-var mongoDockerURI = fmt.Sprintf("mongodb://%s:%s@172.19.0.2/16:%s/%s", config.Config("DB_USER"), config.Config("DB_USER_PASSWORD"), config.Config("MONGO_PORT"), dbName)
+var dbUser = config.Config("DB_USER")
+var dbUserPassword = config.Config("DB_USER_PASSWORD")
 
 func Connect() error {
 	var client *mongo.Client
 	var err error
-	switch config.Config("HOSTED") {
-	case "ATLAS":
-		client, err = mongo.NewClient(options.Client().ApplyURI(mongoAtlasURI))
+
+	// Distinguish between Atlas and Docker hostet mongo databases
+	if mongoHost == "ATLAS" {
+		mongoURI := fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", dbUser, dbUserPassword, dbName)
+		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err
 		}
-	case "DOCKER":
-		client, err = mongo.NewClient(options.Client().ApplyURI(mongoDockerURI))
+	} else {
+		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", dbUser, dbUserPassword, mongoHost, config.Config("MONGO_PORT"), dbName)
+		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err
 		}
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
