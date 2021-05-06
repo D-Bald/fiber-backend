@@ -39,13 +39,13 @@ Follow these steps:
         docker-compose down -v
         ```
 
-It will create and start three docker containers:
+This setup will create and start three docker containers:
  - [mongo](https://hub.docker.com/_/mongo/)
  - [mongo-express](https://hub.docker.com/_/mongo-express)
  - [fiber-backend](https://github.com/D-Bald/fiber-backend)
 
 The data is persistent over multiple `up` and `down` cycles using [docker volumes](https://docs.docker.com/compose/#preserve-volume-data-when-containers-are-created).<br>
-Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-express) on `http://localhost:8081`
+Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-express) on `http://localhost:8081`.
 
 ## API
 
