@@ -29,14 +29,15 @@ Follow these steps:
 3. Set the `MONGO_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`.
 4. Setup environment variables like ports, database name, user and password in the *.env* file.
 5. Execute the following commands in the root directory of [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
-    - For putting up the docker database run:
+    - To get the containers up and running execute:
         ```
         docker-compose up -d
         ```
-    - For bringing the containers down run:
+    - To stop the containers execute:
         ```
         docker-compose down -v
         ```
+
 It will create and start three docker containers:
  - [mongo](https://hub.docker.com/_/mongo/)
  - [mongo-express](https://hub.docker.com/_/mongo-express)
