@@ -23,9 +23,10 @@ You can run this package on its own by setting the [.env](https://github.com/D-B
 
 Follow these steps:
 1. Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
-2. Clone this repository
+2. Clone this repository and navigate into the directory
     ```
     git clone https://github.com/D-Bald/fiber-backend.git
+    cd fiber-backend
     ```
 3. Create *.env* file from the [.env.sample](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file
     ```
