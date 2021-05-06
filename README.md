@@ -18,6 +18,7 @@
 -------------------------
 
 ## Usage
+
 You can run this package on its own by setting the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) accordingly, for exapmle with a Atlas hosted MongoDB Cluster (the *.env* file variables are used by both the docker-compose and the fiber-backend), but using the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) is the easiest way to deploy all dependencies on a server.
 
 Follow these steps:
@@ -71,7 +72,9 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 <sup>*</sup> `status` and `message` are returned on every request.
 
 ## Workflows
+
 ### Create content and content types
+
 The content types *event* and *blogpost* are preset and you can start adding entries on those routes (`/api/events` or `/api/blogposts`). Events have custom fields *description* and *date* whereas blogposts come with *description* and *text*. By convention the collection should be plural of the typename.
 If you want to create a custom content type, first use the `/api/contenttypes` endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.<br>
 The last attribute for a new content type, *field_schema*, is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.<br>
@@ -104,6 +107,7 @@ Example JSON request body:
 ```
 
 ### Update content entries
+
 Every `PATCH` request updates the field `published`, so it has to be set to `true` in any request if this state is wanted after. This is due to poor handling of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore this flag is not used for this field and it can't be omitted or the omitted field is automatically set to false.<br>
 To update custom fields you have to specify it as nested object in the request body.<br>
 Example JSON request body:
@@ -121,6 +125,7 @@ Preset fields can be reached directly. Example JSON request body:
 
 
 ### Create users
+
 The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file in the root direcory of the executable.
 Anybody can create a new user. The role is automatically set to *user*.<br>
 Example JSON request body:
@@ -134,6 +139,7 @@ Example JSON request body:
 ```
 
 ### Update users
+
 A user can edit the own data i.e. *username*, *email*, *password*, *names*.
 Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.<br>
 Example JSON request body:
@@ -142,6 +148,7 @@ Example JSON request body:
 ```
 
 ### Query users and content entries by route parameters
+
 A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles add a new parameter for each (example 4).<br>
 Examples:
    1. `/api/events/title=Title&id=606886f352caea1f9aa86471`
@@ -151,7 +158,6 @@ Examples:
 
 ## TO DO
 
-- Containerize backend and add it to the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml)
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
