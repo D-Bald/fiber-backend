@@ -31,7 +31,7 @@ func Connect() error {
 			return err
 		}
 	} else {
-		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", dbUser, dbUserPassword, mongoHost, config.Config("MONGO_PORT"), dbName)
+		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin", dbUser, dbUserPassword, mongoHost, config.Config("MONGO_PORT"), dbName)
 		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err
