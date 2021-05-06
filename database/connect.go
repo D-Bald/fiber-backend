@@ -21,6 +21,8 @@ func Connect() error {
 	var client *mongo.Client
 	var err error
 
+	fmt.Println(mongoHost)
+
 	// Distinguish between Atlas and Docker hostet mongo databases
 	if mongoHost == "ATLAS" {
 		mongoURI := fmt.Sprintf("mongodb+srv://%s:%s@fiber-backend.kooym.mongodb.net/%s?retryWrites=true&w=majority", dbUser, dbUserPassword, dbName)
@@ -29,7 +31,7 @@ func Connect() error {
 			return err
 		}
 	} else {
-		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s/%s", dbUser, dbUserPassword, mongoHost, dbName)
+		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", dbUser, dbUserPassword, mongoHost, config.Config("MONGO_PORT"), dbName)
 		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err
