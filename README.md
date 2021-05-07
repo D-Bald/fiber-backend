@@ -56,7 +56,7 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 
 | Endpoint                 | Method    | Authentification required   | Response Fields<sup>*</sup>  | Description  |
 | :----------------------- | :-------: | :-------------------------: | :--------------------------: | :----------- |
-| `/api`            | `GET`     | &cross;                     |                              | Health Check |
+| `/api`                   | `GET`     | &cross;                     |                              | Health-Check |
 | `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user.    |
 | `/api/user/`             | `GET`     | &check;                     | `user`                       | Return all users present in the `users` collection.  |
 |                          | `POST`    | &cross;                     | `token`, `user`              | Create a new user.<br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
@@ -167,6 +167,6 @@ Examples:
 
 ## Thanks to...
 
-[go-fiber/recipes/auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
-[bmc blogs: How To Run MongoDB as a Docker Container](https://www.bmc.com/blogs/mongodb-docker-container/)
-[Docker: Base image when deploying a GoLang binary in a container (Fabian Lee)](https://fabianlee.org/2018/05/10/docker-packaging-a-golang-version-of-hello-world-in-a-container/)
+- [go-fiber/recipes/auth-jwt](https://github.com/gofiber/recipes/tree/master/auth-jwt)
+- [bmc blogs: How To Run MongoDB as a Docker Container](https://www.bmc.com/blogs/mongodb-docker-container/)
+- [Docker: Base image when deploying a GoLang binary in a container (Fabian Lee)](https://fabianlee.org/2018/05/10/docker-packaging-a-golang-version-of-hello-world-in-a-container/)
