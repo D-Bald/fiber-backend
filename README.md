@@ -32,7 +32,7 @@ Follow these steps:
     ```
     sudo cp .env.sample .env
     ```
-4. Set the `MONGO_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`.
+4. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`.
 5. Setup environment variables like ports, database name, user and password in the *.env* file. Please also change `SECRET` and `ADMIN_PASSWORD`.
 6. Execute the following commands in the root directory of [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
     - To get the containers up and running execute:
