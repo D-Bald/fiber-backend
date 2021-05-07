@@ -14,10 +14,8 @@ func SetupRoutes(app *fiber.App) {
 	// API Route
 	api := app.Group("/api", logger.New())
 
-	// Sample endpoints
-	sample := api.Group("/sample")
-	sample.Get("/", handler.GetSample)
-	sample.Post("/", handler.CreateSample)
+	// Healthcheck endpoint
+	api.Get("/", handler.Healthcheck)
 
 	// Auth endpoints
 	auth := api.Group("/auth")
