@@ -12,7 +12,7 @@ import (
 )
 
 // Database settings (insert your own database host, name and user data)
-var mongoHost = config.Config("MONGO_HOST")
+var mongoHost = config.Config("DB_HOST")
 var dbName = config.Config("DB_NAME")
 var dbUser = config.Config("DB_USER")
 var dbUserPassword = config.Config("DB_USER_PASSWORD")
@@ -31,7 +31,7 @@ func Connect() error {
 			return err
 		}
 	} else {
-		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/", dbUser, dbUserPassword, mongoHost, config.Config("MONGO_PORT"))
+		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/", dbUser, dbUserPassword, mongoHost, config.Config("DB_PORT"))
 		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err

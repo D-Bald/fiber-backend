@@ -14,9 +14,9 @@ services:
                 aliases:
                     - mongo
         ports:
-            - ${MONGO_PORT}:${MONGO_PORT}
+            - ${DB_PORT}:${DB_PORT}
         healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:${MONGO_PORT}/test --quiet
+            test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:${DB_PORT}/test --quiet
             interval: 30s
             timeout: 10s
             retries: 3

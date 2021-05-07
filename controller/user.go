@@ -14,18 +14,10 @@ import (
 )
 
 // Initialize Collection Users with a admin user
-func hashedAdminPassword() (string, error) {
-	hash, err := hashPassword(config.Config("ADMIN_PASSWORD"))
-	if err != nil {
-		return bson.TypeNull.String(), err
-	}
-	return hash, nil
-}
-
 func InitAdminUser() error {
 	_, err := GetUsers(bson.M{"roles": "admin"})
 	if err != nil {
-		hash, err := hashedAdminPassword()
+		hash, err := hashPassword(config.Config("FIBER_ADMIN_PASSWORD"))
 		if err != nil {
 			return err
 		}
