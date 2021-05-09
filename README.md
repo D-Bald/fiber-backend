@@ -1,7 +1,5 @@
 # Backend for a mini selfmade headless CMS using [Fiber](https://github.com/gofiber/fiber)
 
--------------------------
-
 ## Content
 
 - [Usage](#usage)
