@@ -22,24 +22,24 @@ You can run this package on its own by setting the [.env](https://github.com/D-B
 Follow these steps:
 1. Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
 2. Clone this repository and navigate into the directory
-    ```
-    git clone https://github.com/D-Bald/fiber-backend.git
-    cd fiber-backend
+    ```shell
+    $ git clone https://github.com/D-Bald/fiber-backend.git
+    $ cd fiber-backend
     ```
 3. Create *.env* file from the [.env.sample](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file
-    ```
-    sudo cp .env.sample .env
+    ```shell
+    $ sudo cp .env.sample .env
     ```
 4. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`.
 5. Setup environment variables like ports, database name, user and password in the *.env* file. Please also change `SECRET` and `ADMIN_PASSWORD`.
 6. Execute the following commands in the root directory of [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
     - To get the containers up and running execute:
-        ```
-        docker-compose up -d
+        ```shell
+        $ docker-compose up -d
         ```
     - To stop the containers execute:
-        ```
-        docker-compose down -v
+        ```shell
+        $ docker-compose down -v
         ```
 
 This setup will create and start three docker containers:
@@ -81,7 +81,7 @@ The content types *event* and *blogpost* are preset and you can start adding ent
 If you want to create a custom content type, first use the `/api/contenttypes` endpoint, because the `/api/:content` route is validated by a lookup in the `contenttypes` collection. The mongoDB collections for new types are created automatically on first content insertion.<br>
 The last attribute for a new content type, *field_schema*, is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.<br>
 Exapmle JSON request body:
-```
+```json
 {
     "typename": "protected-admin-test",
     "collection": "protected-admin-test-entries",
@@ -93,7 +93,7 @@ Exapmle JSON request body:
 
 The last attribute for a new content entry, *fields* is a list of key-value pairs specifying name and value of fields, that should match the *field_schema* of the corresponding content type. **A validation is not yet implemented.** <br>
 Example JSON request body:
-```
+```json
 {
     "title": "Blogpost Test",
     "published": false,
@@ -113,12 +113,12 @@ Example JSON request body:
 Every `PATCH` request updates the field `published`, so it has to be set to `true` in any request if this state is wanted after. This is due to poor handling of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore this flag is not used for this field and it can't be omitted or the omitted field is automatically set to false.<br>
 To update custom fields you have to specify it as nested object in the request body.<br>
 Example JSON request body:
-```
+```json
 { "fields": {"description": "foo bar"} }
 ```
 
 Preset fields can be reached directly. Example JSON request body:
-```
+```json
 {
     "tags": ["foo", "bar"],
     "published": true
@@ -131,7 +131,7 @@ Preset fields can be reached directly. Example JSON request body:
 The admin user *adminUser* is preset with the password `ADMIN_PASSWORD` from the [.env](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file in the root direcory of the executable.
 Anybody can create a new user. The role is automatically set to *user*.<br>
 Example JSON request body:
-```
+```json
 {
     "username": "TestUser",
     "email": "unique@mail.com",
@@ -145,7 +145,7 @@ Example JSON request body:
 A user can edit the own data i.e. *username*, *email*, *password*, *names*.
 Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.<br>
 Example JSON request body:
-```
+```json
 { "roles": ["user", "admin"] }
 ```
 
@@ -153,10 +153,12 @@ Example JSON request body:
 
 A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles add a new parameter for each (example 4).<br>
 Examples:
-   1. `/api/events/title=Title&id=606886f352caea1f9aa86471`
-   2. `/api/blogposts/text=Hello%20World`
-   3. `/api/users/roles=admin`
-   4. `/api/blogposts/tags=foo&tags=bar`
+```
+1. /api/events/title=Title&id=606886f352caea1f9aa86471
+2. /api/blogposts/text=Hello%20World
+3. /api/users/roles=admin
+4. /api/blogposts/tags=foo&tags=bar
+```
 
 ## TO DO
 
