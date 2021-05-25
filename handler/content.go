@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// // Query content entries with filter provided in query params
+// Query content entries with filter provided in query params
 func GetContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	parseObject := new(model.Content)
