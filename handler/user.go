@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"regexp"
+	"reflect"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -15,49 +14,53 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GetUsers get all Users
-func GetAllUsers(c *fiber.Ctx) error {
-	users, err := controller.GetUsers(bson.M{})
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No User found", "user": err.Error()})
-	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "user": users})
-}
-
-// GetUser get a user by ID
-// Deprecated: Use GetContent with id in route parameter instead
-func GetUserById(c *fiber.Ctx) error {
-	user, err := controller.GetUserById(c.Params("id"))
-	if err != nil || user.Username == "" {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "user": err.Error()})
-	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User found", "user": user})
-}
-
 // Query users with filter provided in query params
 func GetUsers(c *fiber.Ctx) error {
-	re := regexp.MustCompile(`[a-z]+=[a-zA-Z0-9\%]+`)
-	filterString := re.FindAllString(c.Params("*"), -1)
+	parseObject := new(model.User)
+
+	// parse input
+	if err := c.QueryParser(parseObject); err != nil && err.Error() != "schema: converter not found for primitive.ObjectID" {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
+	}
+
+	// parse ID manually because fiber's QueryParser has no converter for this type.
+	if id := string(c.Request().URI().QueryArgs().Peek("id")); id != "" {
+		uID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
+		}
+		parseObject.ID = uID
+	}
+
+	// set `nil`for empty values
+	v := reflect.ValueOf(*parseObject)
 	filter := make(map[string]interface{})
-	for _, v := range filterString {
-		v = regexp.MustCompile(`%20`).ReplaceAllString(v, " ")
-		s := regexp.MustCompile(`=`).Split(v, -1)
-		if s[0] == `id` {
-			cID, err := primitive.ObjectIDFromHex(s[1])
-			if err != nil {
-				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
+
+	for i := 0; i < v.NumField(); i++ {
+		if !v.Field(i).IsZero() {
+			// If the query Field is a Slice and contains just one value, just add the single value
+			if v.Field(i).Type() == reflect.SliceOf(reflect.TypeOf("")) {
+				if v.Field(i).Len() == 1 {
+					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Index(0).Interface()
+				} else {
+					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
+				}
+			} else {
+				filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
 			}
-			filter["_id"] = cID
-		} else {
-			filter[s[0]] = s[1]
+		}
+		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
+		if v.Type().Field(i).Type.Kind() == reflect.Bool {
+			filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
 		}
 	}
 
+	// get user from DB
 	result, err := controller.GetUsers(filter)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Content found", "user": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "user": result})
 }
 
 // CreateUser new user

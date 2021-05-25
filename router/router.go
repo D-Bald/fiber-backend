@@ -23,11 +23,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// User endpoints
 	user := api.Group("/user")
-	user.Get("/", middleware.Protected(), handler.GetAllUsers)
 	user.Post("/", handler.CreateUser, handler.Login)
 	// Query contents by different Paramters
-	user.Get("/*", middleware.Protected(), handler.GetUsers) // Solution with regular expressions
-	// user.Get("/:id", handler.GetUserById) // Deprecated: use query with parameter "id" instead
+	user.Get("/", middleware.Protected(), handler.GetUsers)
 
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
@@ -47,13 +45,10 @@ func SetupRoutes(app *fiber.App) {
 			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your route for valid content type", "data": nil})
 		}
 	})
-	content.Get("/", handler.GetAllContentEntries)
 	content.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContent)
 
 	// Query contents by different Paramters
-	content.Get("/*", handler.GetContent) // Solution with regular expressions
-	// content.Get("/", handler.GetContent) // Solution with c.QueryParser
-	// content.Get("/:id", handler.GetContentById) // Deprecated: use query with parameter "id" instead
+	content.Get("/", handler.GetContent)
 
 	content.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateContent)
 	content.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContent)

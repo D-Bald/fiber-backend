@@ -56,18 +56,16 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 | :----------------------- | :-------: | :-------------------------: | :--------------------------: | :----------- |
 | `/api`                   | `GET`     | &cross;                     |                              | Health-Check |
 | `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user.    |
-| `/api/user/`             | `GET`     | &check;                     | `user`                       | Return all users present in the `users` collection.  |
+| `/api/user/`             | `GET`     | &check;                     | `user`                       | Return users present in the `users` collection.  |
 |                          | `POST`    | &cross;                     | `token`, `user`              | Create a new user.<br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
-| `/api/user/*`            | `GET`     | &check;                     | `user`                       | Return users filtered by parameters in URL mathing the following regular expression: `[a-z]+=[a-zA-Z0-9\%]+`<br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check;                     | `result`                     | Update user with id `id`. <br> If you want to update `role`, you have to be authenticated with a admin-user.  |
 |                          | `DELETE`  | &check;                     | `result`                     | Delete user with id `id`.<br> Specify user´s password in the request body.   |
 | `/api/contenttypes`      | `GET`     | &cross;                     | `contenttype`                | Return all content types present in the `contenttypes` collection. |
 |                          | `POST`    | &check; (admin)             | `contenttype`                | Create a new content type.<br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.   |
 | `/api/contenttypes/:id`  | `GET`     | &cross;                     | `contenttype`                | Return content type with id `:id`.   |
 |                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content type with id `:id`.   |
-| `/api/:content`          | `GET`     | &cross;                     | `content`                    | Return all content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.<br> For the previous example: `content` has to be set to `events`.   |
+| `/api/:content`          | `GET`     | &cross;                     | `content`                    | Return content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.<br> For the previous example: `content` has to be set to `events`.   |
 |                          | `POST`    | &check; (admin)             | `content`                    | Create a new content entry of the content type, where `content` is the corresponding collection.<br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
-| `/api/:content/*`        | `GET`     | &cross;                     | `content`                    | Return content entries filtered by parameters in URL mathing the following regular expression: `[a-z\_]+=[a-zA-Z0-9\%]+`<br> The first group represents the search key and the second the search value.  |
 |                          | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
 |                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
@@ -110,7 +108,6 @@ Example JSON request body:
 
 ### Update content entries
 
-Every `PATCH` request updates the field `published`, so it has to be set to `true` in any request if this state is wanted after. This is due to poor handling of boolean values when using bson-flag `omitempty` in structs as update schema: *false* is interpreted as *not updated*. Therefore this flag is not used for this field and it can't be omitted or the omitted field is automatically set to false.<br>
 To update custom fields you have to specify it as nested object in the request body.<br>
 Example JSON request body:
 ```json
@@ -151,17 +148,25 @@ Example JSON request body:
 
 ### Query users and content entries by route parameters
 
-A search parameter has the structure `key=value`. Multiple parameters are seperated by `&` (example 1). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 2). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single Tags are possible (example 3). To query multiple tags or roles add a new parameter for each (example 4).<br>
+To get all Users or all content entries of one content type, just use the bare API `GET` endpoint (example 1). To search for Users and content entries with certain properties, a query string can be added to the API endpoint. The query string begins with `?`. Each search parameter has the structure `key=value`. Each document has a unique ID, that can be used to query for a single result (example 2). Multiple parameters are seperated by `&` (example 3). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 4). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single tags are possible (example 5). In queries with multiple tags or roles, they currently have to have the same order as in the database and can not be a subset of tags or roles (example 6). Therefore queries with single tags or roles are recommended.<br>
 Examples:
 ```markdown
-# 1.
-/api/events/title=Title&id=606886f352caea1f9aa86471
-# 2.
-/api/blogposts/text=Hello%20World
+# 1
+/api/events
+# 2
+/api/user?id=609273e9f17aa49bcd126418
 # 3.
-/api/users/roles=admin
+/api/blogposts?title=Title&published=false
 # 4.
-/api/blogposts/tags=foo&tags=bar
+/api/events?place=home
+# 5.
+/api/user?roles=admin
+# 6.
+/api/blogposts?tags=foo,bar
+```
+Example 6 currently only returns documents with a full match on tags:
+```json
+{ "tags": ["foo", "bar"] }
 ```
 
 ## TO DO

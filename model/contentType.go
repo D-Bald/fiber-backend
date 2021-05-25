@@ -13,6 +13,7 @@ type ContentType struct {
 	UpdatedAt   time.Time              `bson:"updated_at"`
 	TypeName    string                 `bson:"typename" json:"typename" xml:"typename" form:"typename"`
 	Collection  string                 `bson:"collection" json:"collection" xml:"collection" form:"collection"`
+	Permissions map[string]string      `bson:"permissions" json:"permissions" xml:"permissions" form:"permissions"`
 	FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema" xml:"field_schema" form:"field_schema"` // not used yet. Could be used for introducing a Validator on Collection Creation.
 }
 
