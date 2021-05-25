@@ -66,7 +66,7 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 |                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content type with id `:id`.   |
 | `/api/:content`          | `GET`     | &cross;                     | `content`                    | Return content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.<br> For the previous example: `content` has to be set to `events`.   |
 |                          | `POST`    | &check; (admin)             | `content`                    | Create a new content entry of the content type, where `content` is the corresponding collection.<br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
-|                          | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
+| `/api/:content/:id`      | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
 |                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
 
 <sup>*</sup> `status` and `message` are returned on every request.
@@ -164,7 +164,7 @@ Examples:
 # 6.
 /api/blogposts?tags=foo,bar
 ```
-Example 6 currently only returns documents with a full match on tags:
+Example 6 currently only returns documents with a full match on tags like:
 ```json
 { "tags": ["foo", "bar"] }
 ```
