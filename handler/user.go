@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -16,39 +17,60 @@ import (
 
 // Query users with filter provided in query params
 func GetUsers(c *fiber.Ctx) error {
-	parseObject := new(model.User)
+	type userInput struct {
+		ID        string    `bson:"_id" json:"id" xml:"id" form:"id" query:"id"`
+		CreatedAt time.Time `bson:"created_at" json:"created_at" xml:"created_at" form:"created_at" query:"created_at"`
+		UpdatedAt time.Time `bson:"updated_at" json:"updated_at" xml:"updated_at" form:"updated_at" query:"updated_at"`
+		Username  string    `bson:"username" json:"username" xml:"username" form:"username" query:"username"`
+		Email     string    `bson:"email" json:"email" xml:"email" form:"email" query:"id"`
+		Password  string    `bson:"password" json:"password" xml:"password" form:"password"`
+		Names     string    `bson:"names" json:"names" xml:"names" form:"names" query:"names"`
+		Roles     []string  `bson:"roles" json:"roles" xml:"roles" form:"roles" query:"roles"`
+	}
+	parseObject := new(userInput)
 
 	// parse input
-	if err := c.QueryParser(parseObject); err != nil && err.Error() != "schema: converter not found for primitive.ObjectID" {
+	if err := c.QueryParser(parseObject); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
 
-	// parse ID manually because fiber's QueryParser has no converter for this type.
-	if id := string(c.Request().URI().QueryArgs().Peek("id")); id != "" {
-		uID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
-		}
-		parseObject.ID = uID
-	}
-
-	// set `nil`for empty values
+	// set `nil` for empty values
 	v := reflect.ValueOf(*parseObject)
 	filter := make(map[string]interface{})
 
 	for i := 0; i < v.NumField(); i++ {
 		if !v.Field(i).IsZero() {
-			// If the query Field is a Slice and contains just one value, just add the single value
-			if v.Field(i).Type() == reflect.SliceOf(reflect.TypeOf("")) {
-				if v.Field(i).Len() == 1 {
-					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Index(0).Interface()
-				} else {
-					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
+			// Differentiate between different fields of the struct specified by their bson flag
+			switch v.Type().Field(i).Tag.Get("bson") {
+			// parse ID manually to ObjectID and add it to filter
+			case "_id":
+				uID, err := primitive.ObjectIDFromHex(v.Field(i).String())
+				if err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
 				}
-			} else {
+				filter["_id"] = uID
+			// parse roles manually to ObjectIDs and add it to filter
+			case "roles":
+				var roleObjectIDs []primitive.ObjectID
+				for _, r := range v.Field(i).Interface().([]string) {
+					rObj, err := controller.GetRole(r)
+					if err != nil {
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
+					}
+					roleObjectIDs = append(roleObjectIDs, rObj.ID)
+				}
+				// Checks if the query slice contains only one value. If so, add this value; Add a slice otherwise
+				if len(roleObjectIDs) == 1 {
+					filter["roles"] = roleObjectIDs[0]
+				} else {
+					filter["roles"] = roleObjectIDs
+				}
+			// add any other parameter to the filter
+			default:
 				filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
 			}
 		}
+
 		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
 		if v.Type().Field(i).Type.Kind() == reflect.Bool {
 			filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
@@ -80,6 +102,13 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "user": nil})
 	}
 
+	// Add "user" to roles
+	uRole, err := controller.GetRole("user")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
+	}
+	user.Roles = append(user.Roles, uRole.ID)
+
 	// Insert in DB
 	if _, err := controller.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
@@ -91,12 +120,18 @@ func CreateUser(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
 	claims["user_id"] = user.ID.Hex()
-	claims["admin"] = hasRole(user.Roles, "admin")
+	claims["admin"] = false
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
 	t, err := token.SignedString([]byte(config.Config("SECRET")))
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// Parse role ObjectIDs to role names
+	roles, err := controller.GetRoleNames(user.Roles)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
 
 	// User for response
@@ -105,7 +140,7 @@ func CreateUser(c *fiber.Ctx) error {
 		Email:    user.Email,
 		Username: user.Username,
 		Names:    user.Names,
-		Roles:    user.Roles,
+		Roles:    roles,
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "token": t, "user ": newUser})
 }
@@ -119,7 +154,8 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "result": nil})
 	}
 
-	uui := new(model.UpdateUserInput)
+	uui := new(model.UserUpdateInput)
+
 	if err := c.BodyParser(uui); err != nil || uui == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
@@ -134,9 +170,17 @@ func UpdateUser(c *fiber.Ctx) error {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "result": nil})
 		}
 	}
+
 	if uui.Roles != nil {
+		// Roles can only be updated by admins
 		if !isAdminToken(token) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "result": nil})
+		}
+		// Checks, if all role are valid
+		for _, r := range uui.Roles {
+			if !controller.IsValidRole(r) {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role not found: %s", r), "result": nil})
+			}
 		}
 	}
 

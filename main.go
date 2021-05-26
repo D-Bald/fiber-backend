@@ -27,6 +27,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Initialize Role System
+	if err := controller.InitRoles(); err != nil {
+		log.Fatal(err)
+	}
+
 	// Initialize Database
 	if err := controller.InitContentTypes(); err != nil {
 		log.Fatal(err)
@@ -36,6 +41,7 @@ func main() {
 	if err := controller.InitAdminUser(); err != nil {
 		log.Fatal(err)
 	}
+
 	// Start app
 	router.SetupRoutes(app)
 	log.Fatal(app.Listen(fmt.Sprintf(":%v", config.Config("FIBER_PORT"))))

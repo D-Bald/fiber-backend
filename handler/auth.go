@@ -5,7 +5,7 @@ import (
 
 	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/controller"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/D-Bald/fiber-backend/model"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -17,15 +17,8 @@ func Login(c *fiber.Ctx) error {
 		Identity string `json:"identity" xml:"identity" form:"identity"`
 		Password string `json:"password" xml:"password" form:"password"`
 	}
-	type UserData struct {
-		ID       primitive.ObjectID `json:"id"`
-		Username string             `json:"username"`
-		Email    string             `json:"email"`
-		Names    string             `json:"names"`
-		Roles    []string           `json:"roles"`
-	}
 	var input LoginInput
-	var ud UserData
+	var ud model.UserOutput
 
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "token": nil, "user": nil})
@@ -45,22 +38,10 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "User not found", "token": nil, "user": nil})
 	}
 
-	if email == nil {
-		ud = UserData{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email,
-			Names:    user.Names,
-			Roles:    user.Roles,
-		}
+	if email != nil {
+		ud = *email
 	} else {
-		ud = UserData{
-			ID:       email.ID,
-			Username: email.Username,
-			Email:    email.Email,
-			Names:    email.Names,
-			Roles:    email.Roles,
-		}
+		ud = *user
 	}
 
 	pw, err := controller.GetUserPasswordHash(ud.ID.Hex())

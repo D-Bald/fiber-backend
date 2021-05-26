@@ -15,11 +15,27 @@ import (
 
 // Initialize Collection Users with a admin user
 func InitAdminUser() error {
-	_, err := GetUsers(bson.M{"roles": "admin"})
+	admin, err := GetRole("admin")
 	if err != nil {
+		return err
+	}
+	_, err = GetUser(bson.M{"roles": admin.ID})
+	if err != nil && err == mongo.ErrNoDocuments {
 		hash, err := hashPassword(config.Config("FIBER_ADMIN_PASSWORD"))
 		if err != nil {
 			return err
+		}
+
+		var roles []primitive.ObjectID
+		if user, err := GetRole("user"); err != nil {
+			return err
+		} else {
+			roles = append(roles, user.ID)
+		}
+		if user, err := GetRole("admin"); err != nil {
+			return err
+		} else {
+			roles = append(roles, user.ID)
 		}
 
 		adminUser := bson.D{
@@ -27,7 +43,7 @@ func InitAdminUser() error {
 			{Key: "email", Value: "admin@sample.com"},
 			{Key: "password", Value: hash},
 			{Key: "names", Value: "admin user"},
-			{Key: "roles", Value: bson.A{"user", "admin"}},
+			{Key: "roles", Value: roles},
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -52,18 +68,32 @@ func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
 
 	cursor, err := database.DB.Collection("users").Find(ctx, filter)
 	if err != nil {
-		return users, err
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var u model.UserOutput
+		var u model.User
 		err := cursor.Decode(&u)
 		if err != nil {
-			return users, err
+			return nil, err
 		}
 
-		users = append(users, &u)
+		// Parse role ObjectIDs to role name strings
+		roles, err := GetRoleNames(u.Roles)
+		if err != nil {
+			return nil, err
+		}
+
+		userOutput := model.UserOutput{
+			ID:       u.ID,
+			Username: u.Username,
+			Email:    u.Email,
+			Names:    u.Names,
+			Roles:    roles,
+		}
+
+		users = append(users, &userOutput)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -79,7 +109,7 @@ func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
 
 // Return a single user that matches the filter
 func GetUser(filter interface{}) (*model.UserOutput, error) {
-	var user *model.UserOutput
+	var user *model.User
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -88,7 +118,21 @@ func GetUser(filter interface{}) (*model.UserOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	// Parse role ObjectIDs to role name strings
+	roles, err := GetRoleNames(user.Roles)
+	if err != nil {
+		return nil, err
+	}
+
+	userOutput := model.UserOutput{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Names:    user.Names,
+		Roles:    roles,
+	}
+
+	return &userOutput, nil
 }
 
 // Return a single user that matches the id input
@@ -156,10 +200,21 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 }
 
 // Update user with provided Parameters in DB
-func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, error) {
-	userID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return new(mongo.UpdateResult), err
+func UpdateUser(id string, input *model.UserUpdateInput) (*mongo.UpdateResult, error) {
+	type mongoUserUpdate struct {
+		Username string               `bson:"username,omitempty"`
+		Email    string               `bson:"email,omitempty"`
+		Password string               `bson:"password,omitempty"`
+		Names    string               `bson:"names,omitempty"`
+		Roles    []primitive.ObjectID `bson:"roles,omitempty"`
+	}
+	// create Object to add ObjectIDs as Roles
+	userUpdate := mongoUserUpdate{
+		Username: input.Username,
+		Email:    input.Email,
+		Password: "",
+		Names:    input.Names,
+		Roles:    nil,
 	}
 
 	// Hash the password before updating the user
@@ -168,18 +223,32 @@ func UpdateUser(id string, input *model.UpdateUserInput) (*mongo.UpdateResult, e
 		if err != nil {
 			return new(mongo.UpdateResult), err
 		}
-		input.Password = hash
+		userUpdate.Password = hash
 	}
 
-	// Update user with provided ID: sets field values for "names" and "updatet_at"
+	// Parse role name strings to role ObjectIDs
+	var roleObjectIDs []primitive.ObjectID
+	for _, r := range input.Roles {
+		rObj, err := GetRole(r)
+		if err != nil {
+			return new(mongo.UpdateResult), err
+		}
+		roleObjectIDs = append(roleObjectIDs, rObj.ID)
+	}
+	userUpdate.Roles = roleObjectIDs
+
+	userID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return new(mongo.UpdateResult), err
+	}
+	// Update user with provided ID and sets field value for `updatet_at`
 	filter := bson.M{"_id": userID}
 	update := bson.D{
-		{Key: "$set", Value: *input},
+		{Key: "$set", Value: userUpdate},
 		{Key: "$currentDate", Value: bson.M{
 			"updated_at": true},
 		},
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

@@ -72,6 +72,23 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 <sup>*</sup> `status` and `message` are returned on every request.
 
 ## Workflows
+### Roles
+
+The Roles *user* and *admin* are preset with weights 0 and 1000. If you delete them, they will be recreated on the next start, but the weights can be manipulated persistently. The role *user* is assigned to every user on creation.<br>
+Just one `GET` endpoint exists, which returns all roles. There is no use for the data of a singe role.<br>
+The `PATCH` and `DELETE` endpoints take `role` as query filter. This means only the `weight` field can be updated. Otherwise delete the old role and create a new one. Weights and rolenames are unique.<br>
+Example JSON request body:
+```json
+// POST or PATCH
+{
+    "role":"moderator",
+    "weight":2
+}
+// DELETE
+{
+    "role":"moderator",
+}
+```
 
 ### Create content and content types
 
@@ -143,12 +160,15 @@ A user can edit the own data i.e. *username*, *email*, *password*, *names*.
 Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.<br>
 Example JSON request body:
 ```json
-{ "roles": ["user", "admin"] }
+{
+    "username": "John Doe",
+    "roles": ["user","admin"]
+}
 ```
 
 ### Query users and content entries by route parameters
 
-To get all Users or all content entries of one content type, just use the bare API `GET` endpoint (example 1). To search for Users and content entries with certain properties, a query string can be added to the API endpoint. The query string begins with `?`. Each search parameter has the structure `key=value`. Each document has a unique ID, that can be used to query for a single result (example 2). Multiple parameters are seperated by `&` (example 3). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 4). Only the whole field value is matched, so submatches are not supported. Queries for single user roles or single tags are possible (example 5). In queries with multiple tags or roles, they currently have to have the same order as in the database and can not be a subset of tags or roles (example 6). Therefore queries with single tags or roles are recommended.<br>
+To get all Users or all content entries of one content type, just use the bare API `GET` endpoint (example 1). To search for Users and content entries with certain properties, a query string can be added to the API endpoint. The query string begins with `?`. Each search parameter has the structure `key=value`. Each document has a unique ID, that can be used to query for a single result (example 2). Multiple parameters are seperated by `&` (example 3). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 4). Only the whole field value is matched, so submatches are not supported. Queries for single elements of array fields like 'tags' are possible (example 5). In queries with multiple array elements, the query values currently have to have the same order as in the database and can not be a subset of the stored ones(example 6). Therefore queries with single values are recommended.<br>
 Examples:
 ```markdown
 # 1
@@ -160,9 +180,9 @@ Examples:
 # 4.
 /api/events?place=home
 # 5.
-/api/user?roles=admin
+/api/blogposts?tags=foo
 # 6.
-/api/blogposts?tags=foo,bar
+/api/events?tags=foo,bar
 ```
 Example 6 currently only returns documents with a full match on tags like:
 ```json
@@ -170,7 +190,10 @@ Example 6 currently only returns documents with a full match on tags like:
 ```
 
 ## TO DO
-
+- Implement Rolechecker Middelware:
+ - Checks if the user has at least one role, that is listed in the Permissions Section of the contenttype for the requested method
+- Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
+- Expand README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 

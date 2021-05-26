@@ -17,16 +17,22 @@ func SetupRoutes(app *fiber.App) {
 	// Healthcheck endpoint
 	api.Get("/", handler.Healthcheck)
 
+	// Role endpoints
+	role := api.Group("/role")
+	role.Get("/", handler.GetRoles)
+	role.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateRole)
+	role.Patch("/", middleware.Protected(), middleware.AdminOnly, handler.UpdateRole)
+	role.Delete("/", middleware.Protected(), middleware.AdminOnly, handler.DeleteRole)
+
 	// Auth endpoints
 	auth := api.Group("/auth")
 	auth.Post("/login", handler.Login)
 
 	// User endpoints
 	user := api.Group("/user")
-	user.Post("/", handler.CreateUser, handler.Login)
 	// Query contents by different Paramters
 	user.Get("/", middleware.Protected(), handler.GetUsers)
-
+	user.Post("/", handler.CreateUser, handler.Login)
 	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
 
@@ -35,6 +41,7 @@ func SetupRoutes(app *fiber.App) {
 	contentTypes.Get("/", handler.GetAllContentTypes)
 	contentTypes.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContentType)
 	contentTypes.Get("/:id", handler.GetContentType)
+	contentTypes.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateContentType)
 	contentTypes.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContentType)
 
 	// Content endpoints
@@ -45,11 +52,9 @@ func SetupRoutes(app *fiber.App) {
 			return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Review your route for valid content type", "data": nil})
 		}
 	})
-	content.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContent)
-
 	// Query contents by different Paramters
 	content.Get("/", handler.GetContent)
-
+	content.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContent)
 	content.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateContent)
 	content.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContent)
 }

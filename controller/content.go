@@ -72,7 +72,7 @@ func GetContentById(coll string, id string) (*model.Content, error) {
 
 // Insert content entry in collection coll with provided Parameters
 func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult, error) {
-	// Get corresponding content type set the ContentType reference.
+	// Get corresponding content type set the ContentTypeID reference.
 	// ct's FieldSchema could be accessed for validation
 	ct, err := GetContentType(bson.M{"collection": coll})
 	if err != nil {
@@ -88,13 +88,13 @@ func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult,
 	return database.DB.Collection(coll).InsertOne(ctx, content)
 }
 
-// Update content entry in collection coll with provided Parameters
-func UpdateContent(coll string, id string, input *model.UpdateContentInput) (*mongo.UpdateResult, error) {
+// Update content entry in collection coll with provided parameters
+func UpdateContent(coll string, id string, input *model.ContentUpdateInput) (*mongo.UpdateResult, error) {
 	cID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return new(mongo.UpdateResult), err
 	}
-	// Update user with provided ID: sets field values for "names" and "updatet_at"
+	// Update content with provided ID and sets field value `updatet_at`
 	filter := bson.M{"_id": cID}
 	update := bson.D{
 		{Key: "$set", Value: *input},

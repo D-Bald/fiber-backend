@@ -85,7 +85,7 @@ func UpdateContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	id := c.Params("id")
 
-	uci := new(model.UpdateContentInput)
+	uci := new(model.ContentUpdateInput)
 	if err := c.BodyParser(uci); err != nil || uci == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
