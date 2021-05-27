@@ -1,4 +1,4 @@
-## Build binary locally, put binary into Alpine container
+# syntax=docker/dockerfile:1
 FROM alpine:latest
 
 RUN mkdir /app
