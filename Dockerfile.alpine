@@ -1,0 +1,17 @@
+## Build binary locally, put binary into Alpine container
+FROM alpine:latest
+
+RUN mkdir /app
+WORKDIR /app
+
+# Set some configurations
+ENV ME_CONFIG_MONGODB_SERVER=mongodb \
+    ME_CONFIG_MONGODB_ENABLE_ADMIN=true \
+    ME_CONFIG_MONGODB_ADMINUSERNAME=${DB_USER} \
+    ME_CONFIG_MONGODB_ADMINPASSWORD=${DB_USER_PASSWORD} \
+    ME_CONFIG_BASICAUTH_USERNAME=${DB_USER} \
+    ME_CONFIG_BASICAUTH_PASSWORD=${DB_USER_PASSWORD}
+
+COPY /dist/fiber-backend-linux-amd64 .
+
+CMD ["/app/fiber-backend-linux-amd64"]
