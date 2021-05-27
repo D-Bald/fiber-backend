@@ -29,7 +29,7 @@ jobs:
         with:
           go-version: 1.15
       - name: Build Go binary
-        run: env GOOS=linux GOARCH=amd64 go build -o ./dist/fiber-backend main
+        run: env GOOS=linux GOARCH=amd64 go build -o ./dist/fiber-backend ./main
 
       # Use the Docker Cache
       - name: Cache Docker layers

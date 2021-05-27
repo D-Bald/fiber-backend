@@ -21,4 +21,4 @@ RUN chmod +x fiber-backend
 
 EXPOSE ${FIBER_PORT}
 
-CMD ["/app/fiber-backend"]
+ENTRYPOINT ["/app/fiber-backend"]
