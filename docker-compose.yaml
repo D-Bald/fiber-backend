@@ -47,7 +47,10 @@ services:
         restart: unless-stopped
     fiber-backend:
         # image: lemmurb/fiber-backend:latest
-        build: .
+        image: lemmurb/fiber-backend:localbuild
+        # build:
+        #     context: .
+        #     dockerfile: Dockerfile.alpine
         container_name: fiber-backend
         environment:
             - DB_HOST=${DB_HOST}

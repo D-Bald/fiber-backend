@@ -30,8 +30,6 @@ func Connect() error {
 		}
 	} else {
 		mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/", dbUser, dbUserPassword, mongoHost, config.Config("DB_PORT"))
-		// REMOVE AFTER DEBUGGING
-		fmt.Println(mongoURI) // REMOVE AFTER DEBUGGING
 		client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
 		if err != nil {
 			return err
