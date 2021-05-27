@@ -209,7 +209,7 @@ Example 6 currently only returns documents with a full match on tags like:
 - Edit `DELETE` handler/controller for contenttypes and roles, so that effected content is delete or role references are removed in users and permissions.
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
 - Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
-- Solve Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the (image from dockerhub)[https://github.com/D-Bald/fiber-backend/blob/8029725bb376d9fb12f17ad05bb609118cc4fe4a/docker-compose.yaml#L49] created by the github action (CI)[https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml]
+- Solve Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the [image from dockerhub](https://github.com/D-Bald/fiber-backend/blob/8029725bb376d9fb12f17ad05bb609118cc4fe4a/docker-compose.yaml#L49) created by the github action [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml)
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
