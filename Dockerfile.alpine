@@ -18,7 +18,7 @@ COPY ./dist/fiber_backend .
 COPY ./.env.sample .env
 
 # change mode of the executable file
-RUN chmod +x fiber-backend
+RUN chmod +x fiber_backend
 
 EXPOSE ${FIBER_PORT}
 
