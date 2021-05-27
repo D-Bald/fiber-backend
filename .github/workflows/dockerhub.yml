@@ -28,7 +28,7 @@ jobs:
         uses: thatisuday/go-cross-build@v1
         with:
             platforms: 'linux/amd64'
-            package: '""'
+            package: 'main'
             name: 'fiber-backend'
             compress: 'false'
             dest: 'dist'
