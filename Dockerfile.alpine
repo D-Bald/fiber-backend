@@ -4,22 +4,9 @@ FROM alpine:latest
 RUN mkdir /app
 WORKDIR /app
 
-# Set some configurations
-ENV DB_HOST=${DB_HOST} \
-    DB_PORT=${DB_PORT} \
-    DB_USER=${DB_USER} \
-    DB_USER_PASSWORD=${DB_USER_PASSWORD} \
-    DB_NAME=${DB_NAME} \
-    FIBER_PORT=${FIBER_PORT} \
-    FIBER_SECRET=${FIBER_SECRET} \
-    FIBER_ADMIN_PASSWORD=${FIBER_ADMIN_PASSWORD}
-
 COPY ./dist/fiber_backend .
-COPY ./.env.sample .env
 
 # change mode of the executable file
 RUN chmod +x fiber_backend
 
-EXPOSE ${FIBER_PORT}
-
-ENTRYPOINT ["/app/fiber_backend"]
+CMD ["/app/fiber_backend"]
