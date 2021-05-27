@@ -46,8 +46,17 @@ services:
             retries: 3
         restart: unless-stopped
     fiber-backend:
-        build: .
+        image: lemmurb/fiber-backend:latest
         container_name: fiber-backend
+        environment:
+            - DB_HOST=${DB_HOST}
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_USER_PASSWORD=${DB_USER_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - FIBER_PORT=${FIBER_PORT}
+            - FIBER_SECRET=${FIBER_SECRET}
+            - FIBER_ADMIN_PASSWORD=${FIBER_ADMIN_PASSWORD}
         depends_on:
             - mongodb
         networks:
@@ -61,5 +70,3 @@ volumes:
 networks:
     mongodb_network:
         name: mongodb_network
-
-
