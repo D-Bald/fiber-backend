@@ -16,4 +16,7 @@ ENV DB_HOST=${DB_HOST} \
 
 COPY /dist/fiber-backend-linux-amd64 .
 
+# change mode of the executable file
+RUN chmod +x fiber-backend-linux-amd64
+
 CMD ["/app/fiber-backend-linux-amd64"]

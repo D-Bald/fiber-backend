@@ -47,6 +47,7 @@ services:
         restart: unless-stopped
     fiber-backend:
         image: lemmurb/fiber-backend:latest
+        # build: .
         container_name: fiber-backend
         environment:
             - DB_HOST=${DB_HOST}
