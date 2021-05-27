@@ -14,11 +14,11 @@ ENV DB_HOST=${DB_HOST} \
     FIBER_SECRET=${FIBER_SECRET} \
     FIBER_ADMIN_PASSWORD=${FIBER_ADMIN_PASSWORD}
 
-COPY ./dist/fiber-backend .
+COPY ./dist/fiber_backend .
 
 # change mode of the executable file
 RUN chmod +x fiber-backend
 
 EXPOSE ${FIBER_PORT}
 
-ENTRYPOINT ["/app/fiber-backend"]
+ENTRYPOINT ["/app/fiber_backend"]
