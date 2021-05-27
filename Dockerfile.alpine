@@ -14,9 +14,11 @@ ENV DB_HOST=${DB_HOST} \
     FIBER_SECRET=${FIBER_SECRET} \
     FIBER_ADMIN_PASSWORD=${FIBER_ADMIN_PASSWORD}
 
-COPY /dist/fiber-backend-linux-amd64 .
+COPY ./dist/fiber-backend-linux-amd64 .
 
 # change mode of the executable file
 RUN chmod +x fiber-backend-linux-amd64
+
+EXPOSE ${FIBER_PORT}
 
 CMD ["/app/fiber-backend-linux-amd64"]
