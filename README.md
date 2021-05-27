@@ -86,7 +86,7 @@ Example JSON request body:
 }
 // DELETE
 {
-    "role":"moderator",
+    "role":"moderator"
 }
 ```
 
@@ -100,6 +100,20 @@ Exapmle JSON request body:
 {
     "typename": "protected-admin-test",
     "collection": "protected-admin-test-entries",
+    "permissions": {
+        "delete": [
+            "admin"
+        ],
+        "get": [
+            "admin"
+        ],
+        "patch": [
+            "admin"
+        ],
+        "post": [
+            "admin"
+        ]
+    }
     "field_schema": {
         "text_field": "string"
     }
@@ -192,8 +206,9 @@ Example 6 currently only returns documents with a full match on tags like:
 ## TO DO
 - Implement Rolechecker Middelware:
  - Checks if the user has at least one role, that is listed in the Permissions Section of the contenttype for the requested method
+- Edit `DELETE` handler/controller for contenttypes and roles, so that effected content is delete or role references are removed in users and permissions.
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
-- Expand README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
+- Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 
