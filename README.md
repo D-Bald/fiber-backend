@@ -21,18 +21,16 @@ You can run this package on its own by setting the [.env](https://github.com/D-B
 
 Follow these steps:
 1. Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
-2. Clone this repository and navigate into the directory
+2. Download *.env* file from the [.env.sample](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file
     ```shell
-    $ git clone https://github.com/D-Bald/fiber-backend.git
-    $ cd fiber-backend
+    $ sudo wget -O .env https://raw.githubusercontent.com/D-Bald/fiber-backend/main/.env.sample
     ```
-3. Create *.env* file from the [.env.sample](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file
+3. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`. Also check environment variables like ports, database name, user and passwor and PLEASE change `SECRET` and `ADMIN_PASSWORD`.
+4. Download the *docker-compose.yaml* file
     ```shell
-    $ sudo cp .env.sample .env
+    $ sudo wget -O docker-compose.yaml https://raw.githubusercontent.com/D-Bald/fiber-backend/main/docker-compose.yaml
     ```
-4. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`.
-5. Setup environment variables like ports, database name, user and password in the *.env* file. Please also change `SECRET` and `ADMIN_PASSWORD`.
-6. Execute the following commands in the root directory of [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
+5. Execute the following commands in the root directory of [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml):
     - To get the containers up and running execute:
         ```shell
         $ docker-compose up -d
@@ -182,7 +180,7 @@ Example JSON request body:
 
 ### Query users and content entries by route parameters
 
-To get all Users or all content entries of one content type, just use the bare API `GET` endpoint (example 1). To search for Users and content entries with certain properties, a query string can be added to the API endpoint. The query string begins with `?`. Each search parameter has the structure `key=value`. Each document has a unique ID, that can be used to query for a single result (example 2). Multiple parameters are seperated by `&` (example 3). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 4). Only the whole field value is matched, so submatches are not supported. Queries for single elements of array fields like 'tags' are possible (example 5). In queries with multiple array elements, the query values currently have to have the same order as in the database and can not be a subset of the stored ones(example 6). Therefore queries with single values are recommended.<br>
+To get all Users or all content entries of one content type, just use the bare API `GET` endpoint (example 1). To search for Users and content entries with certain properties, a query string can be added to the API endpoint. The query string begins with `?`. Each search parameter has the structure `key=value` and is case sensitive. Each document has a unique ID, that can be used to query for a single result (example 2). Multiple parameters are seperated by `&` (example 3). Custom fields of content entries can be queried directly so **don't** use dot-notation or similar (example 4). Only the whole field value is matched, so submatches are not supported. Queries for single elements of array fields like 'tags' are possible (example 5). In queries with multiple array elements, the query values currently have to have the same order as in the database and can not be a subset of the stored ones(example 6). Therefore queries with single values are recommended.<br>
 Examples:
 ```markdown
 # 1
@@ -204,12 +202,13 @@ Example 6 currently only returns documents with a full match on tags like:
 ```
 
 ## TO DO
+- Edit `DELETE` handler/controller for contenttypes and roles, so that effected content is delete or role references are removed in users and permissions.
 - Implement Rolechecker Middelware:
     - Checks if the user has at least one role, that is listed in the Permissions Section of the contenttype for the requested method
-- Edit `DELETE` handler/controller for contenttypes and roles, so that effected content is delete or role references are removed in users and permissions.
+- Fix Issue: Dates cannot be queried, because the `+` sign in a query string is treated as empty space.
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
 - Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
-- Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the :latest image created by workflow [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml) on GitHub Actions=> workflow currently disabled and on ubuntu server locally built container image is used in the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/main/docker-compose.yaml)
+- Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the :latest image created by workflow [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml) on GitHub Actions => workflow currently disabled and a locally on an ubuntu server built image is used in the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/ee64c31317c3ccdd0b75b9ed90117d2b09207efe/docker-compose.yaml#L50).
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)
 

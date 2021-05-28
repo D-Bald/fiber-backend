@@ -154,7 +154,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "result": nil})
 	}
 
-	uui := new(model.UserUpdateInput)
+	uui := new(model.UserUpdate)
 
 	if err := c.BodyParser(uui); err != nil || uui == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})

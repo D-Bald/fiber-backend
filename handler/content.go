@@ -1,10 +1,9 @@
 package handler
 
 import (
-	"reflect"
-
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
+	"github.com/D-Bald/fiber-backend/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,7 +18,6 @@ func GetContent(c *fiber.Ctx) error {
 	if err := c.QueryParser(parseObject); err != nil && err.Error() != "schema: converter not found for primitive.ObjectID" {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
-
 	// parse ID manually because fiber's QueryParser has no converter for this type.
 	if id := string(c.Request().URI().QueryArgs().Peek("id")); id != "" {
 		cID, err := primitive.ObjectIDFromHex(id)
@@ -29,27 +27,22 @@ func GetContent(c *fiber.Ctx) error {
 		parseObject.ID = cID
 	}
 
-	// set `nil`for empty values
-	v := reflect.ValueOf(*parseObject)
-	filter := make(map[string]interface{})
+	// Parse custom fields manually
+	fields, err := controller.GetCustomFields(coll) // Initialize fields map to avoid nil map error
+	parseObject.Fields = make(map[string]interface{})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Custom fields not found", "data": err.Error()})
+	}
+	for f := range fields {
+		if fValue := c.Request().URI().QueryArgs().Peek(f); fValue != nil {
+			parseObject.Fields[f] = string(fValue)
+		}
+	}
 
-	for i := 0; i < v.NumField(); i++ {
-		if !v.Field(i).IsZero() {
-			// If the query Field is a Slice and contains just one value, just add the single value
-			if v.Field(i).Type() == reflect.SliceOf(reflect.TypeOf("")) {
-				if v.Field(i).Len() == 1 {
-					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Index(0).Interface()
-				} else {
-					filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
-				}
-			} else {
-				filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
-			}
-		}
-		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
-		if v.Type().Field(i).Type.Kind() == reflect.Bool {
-			filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
-		}
+	// Make filter where slices, maps and structs are parsed inline
+	filter, err := utils.MakeQueryFilterFromStruct(parseObject)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Custom fields not found", "data": err.Error()})
 	}
 
 	// get content from DB
@@ -85,7 +78,7 @@ func UpdateContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
 	id := c.Params("id")
 
-	uci := new(model.ContentUpdateInput)
+	uci := new(model.ContentUpdate)
 	if err := c.BodyParser(uci); err != nil || uci == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}

@@ -26,7 +26,7 @@ func (u *User) Init() {
 }
 
 // Fields that can be updated through API endpoints
-type UserUpdateInput struct {
+type UserUpdate struct {
 	Username string   `bson:"username,omitempty" json:"username" xml:"username" form:"username"`
 	Email    string   `bson:"email,omitempty" json:"email" xml:"email" form:"email"`
 	Password string   `bson:"password,omitempty" json:"password" xml:"password" form:"password"`

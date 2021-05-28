@@ -250,3 +250,13 @@ func IsValidContentCollection(coll string) bool {
 		return true
 	}
 }
+
+// Returns the Custom fields of a contenttype as map
+func GetCustomFields(coll string) (map[string]interface{}, error) {
+	filter := bson.M{"collection": coll}
+	if ct, err := GetContentType(filter); ct != nil {
+		return ct.FieldSchema, nil
+	} else {
+		return nil, err
+	}
+}

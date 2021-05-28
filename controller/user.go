@@ -200,7 +200,7 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 }
 
 // Update user with provided Parameters in DB
-func UpdateUser(id string, input *model.UserUpdateInput) (*mongo.UpdateResult, error) {
+func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error) {
 	type mongoUserUpdate struct {
 		Username string               `bson:"username,omitempty"`
 		Email    string               `bson:"email,omitempty"`

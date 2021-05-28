@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
@@ -14,6 +15,7 @@ import (
 // Return all content entries from collection coll that match the filter
 func GetContent(coll string, filter interface{}) ([]*model.Content, error) {
 	var result []*model.Content
+	fmt.Println(filter)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -89,7 +91,7 @@ func CreateContent(coll string, content *model.Content) (*mongo.InsertOneResult,
 }
 
 // Update content entry in collection coll with provided parameters
-func UpdateContent(coll string, id string, input *model.ContentUpdateInput) (*mongo.UpdateResult, error) {
+func UpdateContent(coll string, id string, input *model.ContentUpdate) (*mongo.UpdateResult, error) {
 	cID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return new(mongo.UpdateResult), err
