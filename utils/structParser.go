@@ -10,7 +10,7 @@ func MakeQueryFilterFromStruct(s interface{}) (map[string]interface{}, error) {
 	// iterate over struct fields of s
 	v := reflect.ValueOf(s).Elem()
 	for i := 0; i < v.NumField(); i++ {
-		// Leave out zero values
+		// Leave out zero values (important, if the bson flag does not contain "omitempty" option)
 		if !v.Field(i).IsZero() {
 			switch v.Field(i).Kind() {
 			//If the field is a slice and contains just one value, just add the single value not as slice. ONLY USED TO OPTIMIZE MONGO QUERIES

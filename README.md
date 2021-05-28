@@ -21,12 +21,12 @@ You can run this package on its own by setting the [.env](https://github.com/D-B
 
 Follow these steps:
 1. Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
-2. Download *.env* file from the [.env.sample](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample) file
+2. Download [.env file](https://github.com/D-Bald/fiber-backend/blob/master/.env.sample)
     ```shell
     $ sudo wget -O .env https://raw.githubusercontent.com/D-Bald/fiber-backend/main/.env.sample
     ```
 3. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`. Also check environment variables like ports, database name, user and passwor and PLEASE change `SECRET` and `ADMIN_PASSWORD`.
-4. Download the *docker-compose.yaml* file
+4. Download [docker-compose.yaml file](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml)
     ```shell
     $ sudo wget -O docker-compose.yaml https://raw.githubusercontent.com/D-Bald/fiber-backend/main/docker-compose.yaml
     ```
