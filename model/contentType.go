@@ -8,7 +8,7 @@ import (
 
 // ContentType struct
 type ContentType struct {
-	ID          primitive.ObjectID              `bson:"_id" json:"id" xml:"id" form:"email"`
+	ID          primitive.ObjectID              `bson:"_id" json:"_id" xml:"_id" form:"_id"`
 	CreatedAt   time.Time                       `bson:"created_at"`
 	UpdatedAt   time.Time                       `bson:"updated_at"`
 	TypeName    string                          `bson:"typename" json:"typename" xml:"typename" form:"typename"`
@@ -34,7 +34,7 @@ type ContentTypeUpdate struct {
 
 // Fields that are returned on GET methods (password and metadata omitted)
 type ContentTypeOutput struct {
-	ID          primitive.ObjectID     `bson:"_id" json:"id" xml:"id" form:"id"`
+	ID          primitive.ObjectID     `bson:"_id" json:"_id" xml:"_id" form:"_id"`
 	TypeName    string                 `bson:"typename" json:"typename" xml:"typename" form:"typename"`
 	Collection  string                 `bson:"collection" json:"collection" xml:"collection" form:"collection"`
 	Permissions map[string][]string    `bson:"permissions" json:"permissions" xml:"permissions" form:"permissions"`

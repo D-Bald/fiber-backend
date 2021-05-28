@@ -6,7 +6,7 @@ import (
 
 // Saves the user-IDs of users with this role
 type Role struct {
-	ID     primitive.ObjectID `bson:"_id" json:"id" xml:"id" form:"id"`
+	ID     primitive.ObjectID `bson:"_id" json:"_id" xml:"_id" form:"_id"`
 	Role   string             `bson:"role" json:"role" xml:"role" form:"role"`
 	Weight uint               `bson:"weight" json:"weight" xml:"weight" form:"weight"`
 }

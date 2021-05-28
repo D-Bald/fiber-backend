@@ -40,16 +40,16 @@ func GetUsers(c *fiber.Ctx) error {
 
 	for i := 0; i < v.NumField(); i++ {
 		if !v.Field(i).IsZero() {
-			// Differentiate between different fields of the struct specified by their bson flag
-			switch v.Type().Field(i).Tag.Get("bson") {
-			// parse ID manually to ObjectID and add it to filter
+			// Differentiates between different fields of the struct specified by their bson flag
+			switch v.Type().Field(i).Tag.Get("json") {
+			// Parses ID manually to ObjectID and add it to filter
 			case "_id":
 				uID, err := primitive.ObjectIDFromHex(v.Field(i).String())
 				if err != nil {
 					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
 				}
 				filter["_id"] = uID
-			// parse roles manually to ObjectIDs and add it to filter
+			// Parses roles manually to ObjectIDs and add it to filter
 			case "roles":
 				var roleObjectIDs []primitive.ObjectID
 				for _, r := range v.Field(i).Interface().([]string) {
@@ -67,13 +67,13 @@ func GetUsers(c *fiber.Ctx) error {
 				}
 			// add any other parameter to the filter
 			default:
-				filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
+				filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
 			}
 		}
 
 		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
 		if v.Type().Field(i).Type.Kind() == reflect.Bool {
-			filter[string(v.Type().Field(i).Tag.Get("bson"))] = v.Field(i).Interface()
+			filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
 		}
 	}
 
