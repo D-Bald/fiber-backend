@@ -13,14 +13,14 @@ func MakeQueryFilterFromStruct(s interface{}) (map[string]interface{}, error) {
 		// Leave out zero values
 		if !v.Field(i).IsZero() {
 			switch v.Field(i).Kind() {
-			// (ONLY USED TO OPTIMIZE MONGO QUERIES!) If the field is a slice and contains just one value, just add the single value not as slice
+			//If the field is a slice and contains just one value, just add the single value not as slice. ONLY USED TO OPTIMIZE MONGO QUERIES
 			case reflect.Slice:
 				if v.Field(i).Len() == 1 {
 					queryFields[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Index(0).Interface()
 				} else {
 					queryFields[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
 				}
-			// If the field is a map, add the key:value pairs as inline pair to the query fields
+			// If the field is a map add all of its key:value pairs as inline pairs to the current filter
 			case reflect.Map:
 				iter := v.Field(i).MapRange()
 				for iter.Next() {
@@ -40,7 +40,7 @@ func MakeQueryFilterFromStruct(s interface{}) (map[string]interface{}, error) {
 				queryFields[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
 			}
 		}
-		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
+		// Checks for boolean types because the zero value of this type `false` can be relevant for queries
 		if v.Type().Field(i).Type.Kind() == reflect.Bool {
 			queryFields[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
 		}
