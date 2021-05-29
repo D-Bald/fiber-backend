@@ -80,18 +80,22 @@ func GetRoles(filter interface{}) ([]*model.Role, error) {
 	return result, nil
 }
 
-// Returns the role with provided role name
-func GetRole(role string) (*model.Role, error) {
+// Returns first role that matches the filter
+func GetRole(filter interface{}) (*model.Role, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	filter := bson.M{"role": role}
 	var r *model.Role
 	err := database.DB.Collection("roles").FindOne(ctx, filter).Decode(&r)
 	if err != nil {
 		return nil, err
 	}
-
 	return r, nil
+}
+
+// Returns the role with provided role name
+func GetRoleByName(role string) (*model.Role, error) {
+	filter := bson.M{"role": role}
+	return GetRole(filter)
 }
 
 // Returns the role Object with provided ID
@@ -100,22 +104,14 @@ func GetRoleById(id string) (*model.Role, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	filter := bson.M{"_id": rID}
-	var r *model.Role
-	err = database.DB.Collection("roles").FindOne(ctx, filter).Decode(&r)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+	return GetRole(filter)
 }
 
 // Insert role with provided Parameters in DB
 func CreateRole(r *model.Role) (*mongo.InsertOneResult, error) {
+	// Initialize metadata
+	r.Init()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -124,8 +120,12 @@ func CreateRole(r *model.Role) (*mongo.InsertOneResult, error) {
 }
 
 // Update role with provided parameters
-func UpdateRole(input *model.Role) (*mongo.UpdateResult, error) {
-	filter := bson.M{"role": input.Role}
+func UpdateRole(id string, input *model.Role) (*mongo.UpdateResult, error) {
+	rID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return new(mongo.UpdateResult), err
+	}
+	filter := bson.M{"_id": rID}
 	update := bson.D{
 		{Key: "$set", Value: *input},
 		{Key: "$currentDate", Value: bson.M{
@@ -140,7 +140,37 @@ func UpdateRole(input *model.Role) (*mongo.UpdateResult, error) {
 }
 
 // Delete role with provided filter in DB
-func DeleteRole(filter interface{}) (*mongo.DeleteResult, error) {
+func DeleteRole(id string) (*mongo.DeleteResult, error) {
+	rID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get role properties
+	filter := bson.M{"_id": rID}
+	role, err := GetRole(filter)
+	if err != nil {
+		return nil, err
+	}
+	// Delete role from all users whose `roles` field contain it
+	users, err := GetUsers(bson.M{"roles": role.ID})
+	if err != nil && err != mongo.ErrNoDocuments {
+		return nil, err
+	}
+	if err != mongo.ErrNoDocuments {
+		for _, u := range users {
+			DeleteRoleFromUser(rID, u)
+		}
+	}
+	// Delete role from all content type permissions. It is possible, that one ore more permission have no roles left after.
+	allContentTypes, err := GetContentTypes(bson.M{})
+	if err != nil && err != mongo.ErrNoDocuments {
+		return nil, err
+	}
+	for _, u := range allContentTypes {
+		DeleteRoleFromPermissions(rID, u)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -149,7 +179,7 @@ func DeleteRole(filter interface{}) (*mongo.DeleteResult, error) {
 
 // Return true if the a role with given string role name exists
 func IsValidRole(role string) bool {
-	if _, err := GetRole(role); err != nil {
+	if _, err := GetRoleByName(role); err != nil {
 		return false
 	} else {
 		return true

@@ -11,6 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Struct similar to `ContentTypeUpdate` but with ObjectIDs of roles instead of string role names
+type mongoContentTypeUpdate struct {
+	TypeName    string                          `bson:"typename,omitempty"`
+	Collection  string                          `bson:"collection,omitempty"`
+	Permissions map[string][]primitive.ObjectID `bson:"permissions,omitempty"`
+	FieldSchema map[string]interface{}          `bson:"field_schema,omitempty"`
+}
+
 // Initialize collection ContentTypes with 'blogposts' and 'events'
 func InitContentTypes() error {
 	// Checks if blogpost exists
@@ -18,12 +26,12 @@ func InitContentTypes() error {
 	if err != nil && err == mongo.ErrNoDocuments {
 		// Get Roles
 		var roles []primitive.ObjectID
-		if user, err := GetRole("user"); err != nil {
+		if user, err := GetRoleByName("user"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
 		}
-		if admin, err := GetRole("admin"); err != nil {
+		if admin, err := GetRoleByName("admin"); err != nil {
 			return err
 		} else {
 			roles = append(roles, admin.ID)
@@ -55,12 +63,12 @@ func InitContentTypes() error {
 	if err != nil && err == mongo.ErrNoDocuments {
 		// Get Roles
 		var roles []primitive.ObjectID
-		if user, err := GetRole("user"); err != nil {
+		if user, err := GetRoleByName("user"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
 		}
-		if admin, err := GetRole("admin"); err != nil {
+		if admin, err := GetRoleByName("admin"); err != nil {
 			return err
 		} else {
 			roles = append(roles, admin.ID)
@@ -94,9 +102,9 @@ func InitContentTypes() error {
 }
 
 // Return all ContentTypes that match the filter
-func GetContentTypes(filter interface{}) ([]*model.ContentTypeOutput, error) {
+func GetContentTypes(filter interface{}) ([]*model.ContentType, error) {
 	// A slice of tasks for storing the decoded documents
-	var result []*model.ContentTypeOutput
+	var result []*model.ContentType
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -114,23 +122,7 @@ func GetContentTypes(filter interface{}) ([]*model.ContentTypeOutput, error) {
 			return result, err
 		}
 
-		ctOutput := model.ContentTypeOutput{
-			ID:          ct.ID,
-			TypeName:    ct.TypeName,
-			Collection:  ct.Collection,
-			Permissions: make(map[string][]string),
-			FieldSchema: ct.FieldSchema,
-		}
-		// Parse role ObjectIDs to role name strings
-		for key, val := range ct.Permissions {
-			roles, err := GetRoleNames(val)
-			if err != nil {
-				return nil, err
-			}
-			ctOutput.Permissions[key] = roles
-		}
-
-		result = append(result, &ctOutput)
+		result = append(result, &ct)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -181,13 +173,6 @@ func CreateContentType(ct *model.ContentType) (*mongo.InsertOneResult, error) {
 
 // Update content type with provided parameters
 func UpdateContentType(id string, input *model.ContentTypeUpdate) (*mongo.UpdateResult, error) {
-	type mongoContentTypeUpdate struct {
-		TypeName    string                          `bson:"typename,omitempty"`
-		Collection  string                          `bson:"collection,omitempty"`
-		Permissions map[string][]primitive.ObjectID `bson:"permissions,omitempty"`
-		FieldSchema map[string]interface{}          `bson:"field_schema,omitempty"`
-	}
-
 	// create Object with ObjectIDs as Roles
 	ctUpdate := mongoContentTypeUpdate{
 		TypeName:    input.TypeName,
@@ -200,7 +185,7 @@ func UpdateContentType(id string, input *model.ContentTypeUpdate) (*mongo.Update
 	for key, val := range input.Permissions {
 		var roleObjectIDs []primitive.ObjectID
 		for _, r := range val {
-			rObj, err := GetRole(r)
+			rObj, err := GetRoleByName(r)
 			if err != nil {
 				return new(mongo.UpdateResult), err
 			}
@@ -223,7 +208,6 @@ func UpdateContentType(id string, input *model.ContentTypeUpdate) (*mongo.Update
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	return database.DB.Collection("contenttypes").UpdateOne(ctx, filter, update)
 }
 
@@ -239,6 +223,38 @@ func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 	defer cancel()
 
 	return database.DB.Collection("contenttypes").DeleteOne(ctx, filter)
+}
+
+// Delete one role from content type permissions.
+func DeleteRoleFromPermissions(rID primitive.ObjectID, ct *model.ContentType) (*mongo.UpdateResult, error) {
+	ctUpdate := mongoContentTypeUpdate{
+		TypeName:    ct.TypeName,
+		Collection:  ct.Collection,
+		Permissions: make(map[string][]primitive.ObjectID),
+		FieldSchema: ct.FieldSchema,
+	}
+
+	for permission, roles := range ct.Permissions {
+		for _, r := range roles {
+			// all roles of ct except the one to delete are added to the update to keep them
+			if r != rID {
+				ctUpdate.Permissions[permission] = append(ctUpdate.Permissions[permission], r)
+			}
+		}
+	}
+	// Update content type with provided ID and sets field value for `updatet_at`
+	filter := bson.M{"_id": ct.ID}
+	update := bson.D{
+		{Key: "$set", Value: ctUpdate},
+		{Key: "$currentDate", Value: bson.M{
+			"updated_at": true},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return database.DB.Collection("contenttypes").UpdateOne(ctx, filter, update)
 }
 
 // Return true if the a contenttype with exists, where the `collection` field value is `coll`

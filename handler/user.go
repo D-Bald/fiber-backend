@@ -18,11 +18,11 @@ import (
 // Query users with filter provided in query params
 func GetUsers(c *fiber.Ctx) error {
 	type userInput struct {
-		ID        string    `bson:"_id" json:"id" xml:"id" form:"id" query:"id"`
+		ID        string    `bson:"_id" json:"_id" xml:"_id" form:"_id" query:"_id"`
 		CreatedAt time.Time `bson:"created_at" json:"created_at" xml:"created_at" form:"created_at" query:"created_at"`
 		UpdatedAt time.Time `bson:"updated_at" json:"updated_at" xml:"updated_at" form:"updated_at" query:"updated_at"`
 		Username  string    `bson:"username" json:"username" xml:"username" form:"username" query:"username"`
-		Email     string    `bson:"email" json:"email" xml:"email" form:"email" query:"id"`
+		Email     string    `bson:"email" json:"email" xml:"email" form:"email" query:"email"`
 		Password  string    `bson:"password" json:"password" xml:"password" form:"password"`
 		Names     string    `bson:"names" json:"names" xml:"names" form:"names" query:"names"`
 		Roles     []string  `bson:"roles" json:"roles" xml:"roles" form:"roles" query:"roles"`
@@ -53,7 +53,7 @@ func GetUsers(c *fiber.Ctx) error {
 			case "roles":
 				var roleObjectIDs []primitive.ObjectID
 				for _, r := range v.Field(i).Interface().([]string) {
-					rObj, err := controller.GetRole(r)
+					rObj, err := controller.GetRoleByName(r)
 					if err != nil {
 						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
 					}
@@ -78,10 +78,21 @@ func GetUsers(c *fiber.Ctx) error {
 	}
 
 	// get user from DB
-	result, err := controller.GetUsers(filter)
+	users, err := controller.GetUsers(filter)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
 	}
+
+	// Return a subset of fields in readable format
+	result := make([]userOutput, 0)
+	for _, u := range users {
+		out, err := toUserOutput(u)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on parsing user roles", "data": err.Error()})
+		}
+		result = append(result, *out)
+	}
+
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "user": result})
 }
 
@@ -103,7 +114,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Add "user" to roles
-	uRole, err := controller.GetRole("user")
+	uRole, err := controller.GetRoleByName("user")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
@@ -128,21 +139,12 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	// Parse role ObjectIDs to role names
-	roles, err := controller.GetRoleNames(user.Roles)
+	// Return a subset of fields in readable format
+	userOutput, err := toUserOutput(user)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
-
-	// User for response
-	newUser := model.UserOutput{
-		ID:       user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-		Names:    user.Names,
-		Roles:    roles,
-	}
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "token": t, "user ": newUser})
+	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "token": t, "user ": userOutput})
 }
 
 // Update user with parameters from request body
@@ -262,4 +264,29 @@ func isValidUser(id string, p string) bool {
 func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+// Fields that are returned on GET methods (password and metadata omitted)
+type userOutput struct {
+	ID       primitive.ObjectID `bson:"_id" json:"id" xml:"id" form:"id"`
+	Username string             `bson:"username" json:"username" xml:"username" form:"username"`
+	Email    string             `bson:"email" json:"email" xml:"email" form:"email"`
+	Names    string             `bson:"names" json:"names" xml:"names" form:"names"`
+	Roles    []string           `bson:"roles" json:"roles" xml:"roles" form:"roles"`
+}
+
+// Make UserOutput from User
+func toUserOutput(user *model.User) (*userOutput, error) {
+	u := new(userOutput)
+	u.ID = user.ID
+	u.Username = user.Username
+	u.Email = user.Email
+	u.Names = user.Names
+	// Parse role ObjectIDs to role name strings
+	roles, err := controller.GetRoleNames(user.Roles)
+	if err != nil {
+		return nil, err
+	}
+	u.Roles = roles
+	return u, nil
 }

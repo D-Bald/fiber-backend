@@ -33,7 +33,7 @@ func CreateRole(c *fiber.Ctx) error {
 	}
 
 	// Check if already exists
-	checkRole, _ := controller.GetRole(role.Role)
+	checkRole, _ := controller.GetRoleByName(role.Role)
 	if checkRole != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Role already exists", "role": nil})
 	}
@@ -57,13 +57,14 @@ func CreateRole(c *fiber.Ctx) error {
 // lookup by: role
 // field to update: weight
 func UpdateRole(c *fiber.Ctx) error {
+	id := c.Params("id")
 	r := new(model.Role)
 	if err := c.BodyParser(r); err != nil || r == nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
 	// Check if role exists
-	_, err := controller.GetRole(r.Role)
+	_, err := controller.GetRoleByName(r.Role)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Role not found", "result": nil})
 	}
@@ -75,7 +76,7 @@ func UpdateRole(c *fiber.Ctx) error {
 		}
 	}
 
-	result, err := controller.UpdateRole(r)
+	result, err := controller.UpdateRole(id, r)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update role", "result": err.Error()})
 	}
@@ -84,18 +85,15 @@ func UpdateRole(c *fiber.Ctx) error {
 
 // DeleteRole delete role with provided role name
 func DeleteRole(c *fiber.Ctx) error {
-	r := new(model.Role)
+	id := c.Params("id")
 
-	if err := c.BodyParser(r); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input: 'role' required", "result": err.Error()})
-	}
 	// Check if role exists
-	if _, err := controller.GetRole(r.Role); err != nil {
+	if _, err := controller.GetRoleById(id); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Role not found", "result": err.Error()})
 	}
 
 	// Delete in DB
-	result, err := controller.DeleteRole(r.Role)
+	result, err := controller.DeleteRole(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete role", "result": err.Error()})
 	}

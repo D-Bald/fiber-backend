@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/database"
@@ -15,7 +14,6 @@ import (
 // Return all content entries from collection coll that match the filter
 func GetContent(coll string, filter interface{}) ([]*model.Content, error) {
 	var result []*model.Content
-	fmt.Println(filter)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

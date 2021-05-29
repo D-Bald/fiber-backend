@@ -31,12 +31,3 @@ type ContentTypeUpdate struct {
 	Permissions map[string][]string    `bson:"permissions,omitempty" json:"permissions" xml:"permissions" form:"permissions"`
 	FieldSchema map[string]interface{} `bson:"field_schema,omitempty" json:"field_schema" xml:"field_schema" form:"field_schema"`
 }
-
-// Fields that are returned on GET methods (password and metadata omitted)
-type ContentTypeOutput struct {
-	ID          primitive.ObjectID     `bson:"_id" json:"_id" xml:"_id" form:"_id"`
-	TypeName    string                 `bson:"typename" json:"typename" xml:"typename" form:"typename"`
-	Collection  string                 `bson:"collection" json:"collection" xml:"collection" form:"collection"`
-	Permissions map[string][]string    `bson:"permissions" json:"permissions" xml:"permissions" form:"permissions"`
-	FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema" xml:"field_schema" form:"field_schema"`
-}

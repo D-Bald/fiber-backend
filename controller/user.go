@@ -13,9 +13,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Struct similar to `UserUpdate` but with ObjectIDs of roles instead of string role names
+type mongoUserUpdate struct {
+	Username string               `bson:"username,omitempty"`
+	Email    string               `bson:"email,omitempty"`
+	Password string               `bson:"password,omitempty"`
+	Names    string               `bson:"names,omitempty"`
+	Roles    []primitive.ObjectID `bson:"roles,omitempty"`
+}
+
 // Initialize Collection Users with a admin user
 func InitAdminUser() error {
-	admin, err := GetRole("admin")
+	admin, err := GetRoleByName("admin")
 	if err != nil {
 		return err
 	}
@@ -27,12 +36,12 @@ func InitAdminUser() error {
 		}
 
 		var roles []primitive.ObjectID
-		if user, err := GetRole("user"); err != nil {
+		if user, err := GetRoleByName("user"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
 		}
-		if user, err := GetRole("admin"); err != nil {
+		if user, err := GetRoleByName("admin"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
@@ -59,9 +68,9 @@ func InitAdminUser() error {
 }
 
 // Return all users from DB with provided Filter
-func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
+func GetUsers(filter interface{}) ([]*model.User, error) {
 	// A slice of tasks for storing the decoded documents
-	var users []*model.UserOutput
+	var users []*model.User
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -79,21 +88,7 @@ func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
 			return nil, err
 		}
 
-		// Parse role ObjectIDs to role name strings
-		roles, err := GetRoleNames(u.Roles)
-		if err != nil {
-			return nil, err
-		}
-
-		userOutput := model.UserOutput{
-			ID:       u.ID,
-			Username: u.Username,
-			Email:    u.Email,
-			Names:    u.Names,
-			Roles:    roles,
-		}
-
-		users = append(users, &userOutput)
+		users = append(users, &u)
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -108,7 +103,7 @@ func GetUsers(filter interface{}) ([]*model.UserOutput, error) {
 }
 
 // Return a single user that matches the filter
-func GetUser(filter interface{}) (*model.UserOutput, error) {
+func GetUser(filter interface{}) (*model.User, error) {
 	var user *model.User
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -118,25 +113,12 @@ func GetUser(filter interface{}) (*model.UserOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Parse role ObjectIDs to role name strings
-	roles, err := GetRoleNames(user.Roles)
-	if err != nil {
-		return nil, err
-	}
 
-	userOutput := model.UserOutput{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		Names:    user.Names,
-		Roles:    roles,
-	}
-
-	return &userOutput, nil
+	return user, nil
 }
 
 // Return a single user that matches the id input
-func GetUserById(id string) (*model.UserOutput, error) {
+func GetUserById(id string) (*model.User, error) {
 	uID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -147,13 +129,13 @@ func GetUserById(id string) (*model.UserOutput, error) {
 }
 
 // Return a single user that matches the email input
-func GetUserByEmail(e string) (*model.UserOutput, error) {
+func GetUserByEmail(e string) (*model.User, error) {
 	filter := bson.M{"email": e}
 	return GetUser(filter)
 }
 
 // Return a single user that matches the username input
-func GetUserByUsername(u string) (*model.UserOutput, error) {
+func GetUserByUsername(u string) (*model.User, error) {
 	filter := bson.M{"username": u}
 	return GetUser(filter)
 }
@@ -201,20 +183,13 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 
 // Update user with provided Parameters in DB
 func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error) {
-	type mongoUserUpdate struct {
-		Username string               `bson:"username,omitempty"`
-		Email    string               `bson:"email,omitempty"`
-		Password string               `bson:"password,omitempty"`
-		Names    string               `bson:"names,omitempty"`
-		Roles    []primitive.ObjectID `bson:"roles,omitempty"`
-	}
 	// create Object to add ObjectIDs as Roles
 	userUpdate := mongoUserUpdate{
 		Username: input.Username,
 		Email:    input.Email,
 		Password: "",
 		Names:    input.Names,
-		Roles:    nil,
+		Roles:    make([]primitive.ObjectID, 0),
 	}
 
 	// Hash the password before updating the user
@@ -227,15 +202,13 @@ func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error)
 	}
 
 	// Parse role name strings to role ObjectIDs
-	var roleObjectIDs []primitive.ObjectID
 	for _, r := range input.Roles {
-		rObj, err := GetRole(r)
+		rObj, err := GetRoleByName(r)
 		if err != nil {
 			return new(mongo.UpdateResult), err
 		}
-		roleObjectIDs = append(roleObjectIDs, rObj.ID)
+		userUpdate.Roles = append(userUpdate.Roles, rObj.ID)
 	}
-	userUpdate.Roles = roleObjectIDs
 
 	userID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -269,6 +242,30 @@ func DeleteUser(id string) (*mongo.DeleteResult, error) {
 	return database.DB.Collection("users").DeleteOne(ctx, filter)
 }
 
+// Delete only one role from user.
+func DeleteRoleFromUser(rID primitive.ObjectID, user *model.User) (*mongo.UpdateResult, error) {
+	roles := make([]primitive.ObjectID, 0)
+	for _, r := range user.Roles {
+		if r != rID {
+			roles = append(roles, r)
+		}
+	}
+	// Update user with provided ID and sets field value for `updatet_at`
+	filter := bson.M{"_id": user.ID}
+	update := bson.D{
+		{Key: "$set", Value: bson.M{"roles": roles}},
+		{Key: "$currentDate", Value: bson.M{
+			"updated_at": true},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return database.DB.Collection("users").UpdateOne(ctx, filter, update)
+}
+
+// Hashes password string with bcrypt
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
