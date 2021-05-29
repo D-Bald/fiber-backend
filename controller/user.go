@@ -13,15 +13,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Struct similar to `UserUpdate` but with ObjectIDs of roles instead of string role names
-type mongoUserUpdate struct {
-	Username string               `bson:"username,omitempty"`
-	Email    string               `bson:"email,omitempty"`
-	Password string               `bson:"password,omitempty"`
-	Names    string               `bson:"names,omitempty"`
-	Roles    []primitive.ObjectID `bson:"roles,omitempty"`
-}
-
 // Initialize Collection Users with a admin user
 func InitAdminUser() error {
 	admin, err := GetRoleByName("admin")
@@ -183,6 +174,15 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 
 // Update user with provided Parameters in DB
 func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error) {
+	// Struct similar to `UserUpdate` but with ObjectIDs of roles instead of string role names
+	type mongoUserUpdate struct {
+		Username string               `bson:"username,omitempty"`
+		Email    string               `bson:"email,omitempty"`
+		Password string               `bson:"password,omitempty"`
+		Names    string               `bson:"names,omitempty"`
+		Roles    []primitive.ObjectID `bson:"roles,omitempty"`
+	}
+
 	// create Object to add ObjectIDs as Roles
 	userUpdate := mongoUserUpdate{
 		Username: input.Username,

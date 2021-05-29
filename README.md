@@ -205,9 +205,9 @@ Example 6 currently only returns documents with a full match on tags like:
 - Edit `DELETE` handler/controller for contenttypes, so that effected content is also deleted
 - Implement Rolechecker Middelware:
     - Checks if the user has at least one role, that is listed in the Permissions Section of the contenttype for the requested method
+- Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
 - Fix Issue: Dates cannot be queried, because the `+` sign in a query string is treated as empty space. Maybe by escaping + if the parameter value is send in `""`.
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
-- Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
 - Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the :latest image created by workflow [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml) on GitHub Actions => workflow currently disabled and a locally on an ubuntu server built image is used in the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/ee64c31317c3ccdd0b75b9ed90117d2b09207efe/docker-compose.yaml#L50).
 - Implement file upload
 - Validate field_schema on content entry creation (https://docs.mongodb.com/manual/core/schema-validation/)

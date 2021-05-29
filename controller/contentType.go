@@ -11,14 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Struct similar to `ContentTypeUpdate` but with ObjectIDs of roles instead of string role names
-type mongoContentTypeUpdate struct {
-	TypeName    string                          `bson:"typename,omitempty"`
-	Collection  string                          `bson:"collection,omitempty"`
-	Permissions map[string][]primitive.ObjectID `bson:"permissions,omitempty"`
-	FieldSchema map[string]interface{}          `bson:"field_schema,omitempty"`
-}
-
 // Initialize collection ContentTypes with 'blogposts' and 'events'
 func InitContentTypes() error {
 	// Checks if blogpost exists
@@ -173,6 +165,14 @@ func CreateContentType(ct *model.ContentType) (*mongo.InsertOneResult, error) {
 
 // Update content type with provided parameters
 func UpdateContentType(id string, input *model.ContentTypeUpdate) (*mongo.UpdateResult, error) {
+	// Struct similar to `ContentTypeUpdate` but with ObjectIDs of roles instead of string role names
+	type mongoContentTypeUpdate struct {
+		TypeName    string                          `bson:"typename,omitempty"`
+		Collection  string                          `bson:"collection,omitempty"`
+		Permissions map[string][]primitive.ObjectID `bson:"permissions,omitempty"`
+		FieldSchema map[string]interface{}          `bson:"field_schema,omitempty"`
+	}
+
 	// create Object with ObjectIDs as Roles
 	ctUpdate := mongoContentTypeUpdate{
 		TypeName:    input.TypeName,
@@ -227,25 +227,19 @@ func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 
 // Delete one role from content type permissions.
 func DeleteRoleFromPermissions(rID primitive.ObjectID, ct *model.ContentType) (*mongo.UpdateResult, error) {
-	ctUpdate := mongoContentTypeUpdate{
-		TypeName:    ct.TypeName,
-		Collection:  ct.Collection,
-		Permissions: make(map[string][]primitive.ObjectID),
-		FieldSchema: ct.FieldSchema,
-	}
-
+	permissions := make(map[string][]primitive.ObjectID)
 	for permission, roles := range ct.Permissions {
 		for _, r := range roles {
 			// all roles of ct except the one to delete are added to the update to keep them
 			if r != rID {
-				ctUpdate.Permissions[permission] = append(ctUpdate.Permissions[permission], r)
+				permissions[permission] = append(permissions[permission], r)
 			}
 		}
 	}
 	// Update content type with provided ID and sets field value for `updatet_at`
 	filter := bson.M{"_id": ct.ID}
 	update := bson.D{
-		{Key: "$set", Value: ctUpdate},
+		{Key: "$set", Value: bson.M{"permissions": permissions}},
 		{Key: "$currentDate", Value: bson.M{
 			"updated_at": true},
 		},
