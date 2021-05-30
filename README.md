@@ -115,7 +115,7 @@ Exapmle JSON request body:
         "post": [
             "admin"
         ]
-    }
+    },
     "field_schema": {
         "text_field": "string"
     }

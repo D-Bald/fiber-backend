@@ -14,9 +14,9 @@ import (
 func GetRoles(c *fiber.Ctx) error {
 	result, err := controller.GetRoles(bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "roles": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "role": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "All Roles", "roles": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "All Roles", "role": result})
 }
 
 // CreateRole
