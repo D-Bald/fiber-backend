@@ -24,25 +24,18 @@ func CreateRole(c *fiber.Ctx) error {
 	role := new(model.Role)
 
 	// Parse input
-	if err := c.BodyParser(role); err != nil || role.Role == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input: 'role' required", "role": err.Error()})
-	}
-
-	if role.Weight < 1 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input: 'weight' > 0 required", "role": nil})
+	if err := c.BodyParser(role); err != nil || role.Tag == "" || role.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input: 'tag' and 'name' required", "role": err.Error()})
 	}
 
 	// Check if already exists
-	checkRole, _ := controller.GetRoleByName(role.Role)
-	if checkRole != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Role already exists", "role": nil})
+	checkRoleTag, _ := controller.GetRoleByTag(role.Tag)
+	if checkRoleTag != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role tag already in use with role name: %s", checkRoleTag.Name), "role": nil})
 	}
-	// Check, if weight is already taken
-	checkWeight, _ := controller.GetRoles(bson.M{})
-	for _, r := range checkWeight {
-		if r.Weight == role.Weight {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Weight %v already taken by role: %s", role.Weight, r.Role), "role": nil})
-		}
+	checkRoleName, _ := controller.GetRoleByName(role.Name)
+	if checkRoleName != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role name already in use with role tag: %s", checkRoleName.Tag), "role": nil})
 	}
 
 	// Insert in DB
@@ -64,16 +57,14 @@ func UpdateRole(c *fiber.Ctx) error {
 	}
 
 	// Check if role exists
-	_, err := controller.GetRoleByName(r.Role)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Role not found", "result": nil})
+	// Check if already exists
+	checkRoleTag, _ := controller.GetRoleByTag(r.Tag)
+	if checkRoleTag != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role tag already in use with role name: %s", checkRoleTag.Name), "result": nil})
 	}
-	// Check, if weight is already taken
-	checkWeight, _ := controller.GetRoles(bson.M{})
-	for role := 0; role < len(checkWeight); role++ {
-		if checkWeight[role].Weight == r.Weight {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Weight %v already taken by role: %s", r.Weight, checkWeight[role].Role), "result": nil})
-		}
+	checkRoleName, _ := controller.GetRoleByName(r.Name)
+	if checkRoleName != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role name already in use with role tag: %s", checkRoleName.Tag), "result": nil})
 	}
 
 	result, err := controller.UpdateRole(id, r)

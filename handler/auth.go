@@ -53,25 +53,47 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "invalid password", "token": nil, "user": nil})
 	}
 
-	// Return a subset of fields in readable format
-	userOutput, err := toUserOutput(&user)
+	// Checks, if user is admin
+	isAdmin, err := isAdmin(user)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on parsing user roles", "token": nil, "user": nil})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not check user roles", "token": nil, "user": nil})
 	}
 
+	// Creates token
 	token := jwt.New(jwt.SigningMethodHS256)
-
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
 	claims["user_id"] = user.ID.Hex()
-	claims["admin"] = hasRole(userOutput.Roles, "admin")
+	claims["admin"] = isAdmin
+	claims["roles"] = user.Roles
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
+	// Signs token
 	t, err := token.SignedString([]byte(config.Config("SECRET")))
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	// Returns a subset of fields in readable format
+	userOutput, err := toUserOutput(&user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on parsing user roles", "token": nil, "user": nil})
+	}
+
 	// return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": fiber.Map{"token": t, "user": ud}})
 	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "token": t, "user": userOutput})
+}
+
+// returns true, if user has a role with tag 'admin', returns false otherwise
+func isAdmin(user model.User) (bool, error) {
+	for _, rID := range user.Roles {
+		role, err := controller.GetRoleById(rID.Hex())
+		if err != nil {
+			return false, err
+		}
+		if role.Tag == "admin" {
+			return true, nil
+		}
+	}
+	return false, nil
 }

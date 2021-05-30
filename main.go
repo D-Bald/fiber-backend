@@ -32,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Initialize Database
+	// Initialize content types
 	if err := controller.InitContentTypes(); err != nil {
 		log.Fatal(err)
 	}

@@ -13,27 +13,27 @@ import (
 
 // Init roles: 'admin' and 'user'
 var (
-	admin = bson.D{
-		{Key: "role", Value: "admin"},
-		{Key: "weight", Value: 1000},
+	defaultRole = bson.D{
+		{Key: "tag", Value: "default"},
+		{Key: "name", Value: "User"},
 	}
-	user = bson.D{
-		{Key: "role", Value: "user"},
-		{Key: "weight", Value: 0},
+	admin = bson.D{
+		{Key: "tag", Value: "admin"},
+		{Key: "name", Value: "Administrator"},
 	}
 )
 
 // Initialize collection roles with 'admin' and 'user'
 func InitRoles() error {
-	_, err := GetRole("user")
+	_, err := GetRoleByTag("default")
 	if err != nil && err == mongo.ErrNoDocuments {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if _, err := database.DB.Collection("roles").InsertOne(ctx, user); err != nil {
+		if _, err := database.DB.Collection("roles").InsertOne(ctx, defaultRole); err != nil {
 			return err
 		}
 	}
-	_, err = GetRole("admin")
+	_, err = GetRoleByTag("admin")
 	if err != nil && err == mongo.ErrNoDocuments {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -93,8 +93,14 @@ func GetRole(filter interface{}) (*model.Role, error) {
 }
 
 // Returns the role with provided role name
-func GetRoleByName(role string) (*model.Role, error) {
-	filter := bson.M{"role": role}
+func GetRoleByName(name string) (*model.Role, error) {
+	filter := bson.M{"name": name}
+	return GetRole(filter)
+}
+
+// Return the role with provided role tag
+func GetRoleByTag(tag string) (*model.Role, error) {
+	filter := bson.M{"tag": tag}
 	return GetRole(filter)
 }
 
@@ -194,7 +200,7 @@ func GetRoleNames(roleIDs []primitive.ObjectID) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		output = append(output, rObj.Role)
+		output = append(output, rObj.Name)
 	}
 	return output, nil
 }

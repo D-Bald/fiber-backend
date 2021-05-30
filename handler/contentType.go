@@ -145,9 +145,9 @@ func UpdateContentType(c *fiber.Ctx) error {
 	}
 	result, err := controller.UpdateContentType(id, ctui)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "result": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update Content Type", "result": err.Error()})
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "result": result})
+	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully updated", "result": result})
 }
 
 // DeleteContentType

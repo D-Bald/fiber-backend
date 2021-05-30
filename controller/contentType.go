@@ -18,12 +18,12 @@ func InitContentTypes() error {
 	if err != nil && err == mongo.ErrNoDocuments {
 		// Get Roles
 		var roles []primitive.ObjectID
-		if user, err := GetRoleByName("user"); err != nil {
+		if user, err := GetRoleByTag("default"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
 		}
-		if admin, err := GetRoleByName("admin"); err != nil {
+		if admin, err := GetRoleByTag("admin"); err != nil {
 			return err
 		} else {
 			roles = append(roles, admin.ID)
@@ -33,10 +33,10 @@ func InitContentTypes() error {
 			{Key: "typename", Value: "blogpost"},
 			{Key: "collection", Value: "blogposts"},
 			{Key: "permissions", Value: bson.M{
-				"get":    roles,
-				"post":   roles,
-				"patch":  roles,
-				"delete": roles,
+				"GET":    roles,
+				"POST":   roles,
+				"PATCH":  roles,
+				"DELETE": roles,
 			}},
 			{Key: "field_schema", Value: bson.M{
 				"description": "string",
@@ -55,12 +55,12 @@ func InitContentTypes() error {
 	if err != nil && err == mongo.ErrNoDocuments {
 		// Get Roles
 		var roles []primitive.ObjectID
-		if user, err := GetRoleByName("user"); err != nil {
+		if user, err := GetRoleByTag("default"); err != nil {
 			return err
 		} else {
 			roles = append(roles, user.ID)
 		}
-		if admin, err := GetRoleByName("admin"); err != nil {
+		if admin, err := GetRoleByTag("admin"); err != nil {
 			return err
 		} else {
 			roles = append(roles, admin.ID)
@@ -70,10 +70,10 @@ func InitContentTypes() error {
 			{Key: "typename", Value: "event"},
 			{Key: "collection", Value: "events"},
 			{Key: "permissions", Value: bson.M{
-				"get":    roles,
-				"post":   roles,
-				"patch":  roles,
-				"delete": roles,
+				"GET":    roles,
+				"POST":   roles,
+				"PATCH":  roles,
+				"DELETE": roles,
 			}},
 			{Key: "field_schema", Value: bson.M{
 				"description": "string",
@@ -259,7 +259,17 @@ func DeleteRoleFromPermissions(rID primitive.ObjectID, ct *model.ContentType) (*
 	return database.DB.Collection("contenttypes").UpdateOne(ctx, filter, update)
 }
 
-// Return true if the a contenttype with exists, where the `collection` field value is `coll`
+// Returns a content type basing on a collection
+func GetContentTypeByCollection(coll string) (*model.ContentType, error) {
+	filter := bson.M{"collection": coll}
+	if ct, err := GetContentType(filter); err != nil {
+		return nil, err
+	} else {
+		return ct, nil
+	}
+}
+
+// Returns true if the a contenttype with exists, where the `collection` field value is `coll`
 func IsValidContentCollection(coll string) bool {
 	filter := bson.M{"collection": coll}
 	if _, err := GetContentType(filter); err != nil {
@@ -270,6 +280,7 @@ func IsValidContentCollection(coll string) bool {
 }
 
 // Returns the Custom fields of a contenttype as map
+// Takes the collection of a content type as input
 func GetCustomFields(coll string) (map[string]interface{}, error) {
 	filter := bson.M{"collection": coll}
 	if ct, err := GetContentType(filter); ct != nil {

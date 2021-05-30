@@ -13,29 +13,27 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Initialize Collection Users with a admin user
+// Initialize Users with an admin user
 func InitAdminUser() error {
-	admin, err := GetRoleByName("admin")
+	adminRole, err := GetRoleByTag("admin")
 	if err != nil {
 		return err
 	}
-	_, err = GetUser(bson.M{"roles": admin.ID})
+	// Checks, if a user with a role with tag 'admin' exists, if not, create one
+	_, err = GetUser(bson.M{"roles": adminRole.ID})
 	if err != nil && err == mongo.ErrNoDocuments {
 		hash, err := hashPassword(config.Config("FIBER_ADMIN_PASSWORD"))
 		if err != nil {
 			return err
 		}
 
+		// add admin and default roles to admin user
 		var roles []primitive.ObjectID
-		if user, err := GetRoleByName("user"); err != nil {
+		roles = append(roles, adminRole.ID)
+		if userRole, err := GetRoleByTag("default"); err != nil {
 			return err
 		} else {
-			roles = append(roles, user.ID)
-		}
-		if user, err := GetRoleByName("admin"); err != nil {
-			return err
-		} else {
-			roles = append(roles, user.ID)
+			roles = append(roles, userRole.ID)
 		}
 
 		adminUser := bson.D{

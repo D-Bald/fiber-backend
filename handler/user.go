@@ -113,8 +113,8 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "user": nil})
 	}
 
-	// Add "user" to roles
-	uRole, err := controller.GetRoleByName("user")
+	// Add default role to roles
+	uRole, err := controller.GetRoleByTag("default")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
@@ -132,6 +132,7 @@ func CreateUser(c *fiber.Ctx) error {
 	claims["username"] = user.Username
 	claims["user_id"] = user.ID.Hex()
 	claims["admin"] = false
+	claims["roles"] = user.Roles
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
 	t, err := token.SignedString([]byte(config.Config("SECRET")))
@@ -231,17 +232,6 @@ func isValidToken(t *jwt.Token, id string) bool {
 // Checks if the role claim of the token is `admin`
 func isAdminToken(t *jwt.Token) bool {
 	return t.Claims.(jwt.MapClaims)["admin"].(bool)
-}
-
-// hasRole takes a string slice of roles and looks for an element in it. If found it will
-// return true, otherwise it will return false.
-func hasRole(slice []string, role string) bool {
-	for _, item := range slice {
-		if item == role {
-			return true
-		}
-	}
-	return false
 }
 
 // Checks if the user exists in the DB and if the provided password matches the saved one

@@ -54,7 +54,7 @@ func SetupRoutes(app *fiber.App) {
 	})
 	// Query contents by different Paramters
 	content.Get("/", handler.GetContent)
-	content.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateContent)
-	content.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateContent)
-	content.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteContent)
+	content.Post("/", middleware.Protected(), middleware.ApplyPermissions, handler.CreateContent)
+	content.Patch("/:id", middleware.Protected(), middleware.ApplyPermissions, handler.UpdateContent)
+	content.Delete("/:id", middleware.Protected(), middleware.ApplyPermissions, handler.DeleteContent)
 }
