@@ -11,7 +11,7 @@
     - [Create users](#create-users)
     - [Update users](#update-users)
     - [Query users and content entries by route parameters](#query-users-and-content-entries-by-route-parameters)
-- [TO DO](#to-do)
+- [TODO](#to-do)
 - [Thanks to...](#thanks-to...)
 
 -------------------------
@@ -217,8 +217,8 @@ Example 6 currently only returns documents with a full match on tags like:
 { "tags": ["foo", "bar"] }
 ```
 
-## TO DO
-- Fix Issue: Dates cannot be queried, because the `+` sign in a query string is treated as empty space. Maybe by escaping + if the parameter value is send in `""`.
+## TODO
+- Fix Issue: Dates cannot be queried, because the `+` sign in a query string is treated as empty space. Maybe by escaping + if the parameter value is send in `""`
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
 - Implement permission control over user, roles and content types endpoints
 - Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the :latest image created by workflow [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml) on GitHub Actions => workflow currently disabled and a locally on an ubuntu server built image is used in the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/ee64c31317c3ccdd0b75b9ed90117d2b09207efe/docker-compose.yaml#L50).
