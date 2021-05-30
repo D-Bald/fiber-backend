@@ -51,30 +51,34 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 ## API
 
 | Endpoint                 | Method    | Authentification required   | Response Fields<sup>*</sup>  | Description  |
-| :----------------------- | :-------: | :-------------------------: | :--------------------------: | :----------- |
+| :----------------------- | :-------: | :------------------------- | :--------------------------: | :----------- |
 | `/api`                   | `GET`     | &cross;                     |                              | Health-Check |
-| `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user.    |
-| `/api/user/`             | `GET`     | &check;                     | `user`                       | Return users present in the `users` collection.  |
-|                          | `POST`    | &cross;                     | `token`, `user`              | Create a new user.<br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user.  |
-|                          | `PATCH`   | &check;                     | `result`                     | Update user with id `id`. <br> If you want to update `role`, you have to be authenticated with a admin-user.  |
-|                          | `DELETE`  | &check;                     | `result`                     | Delete user with id `id`.<br> Specify user´s password in the request body.   |
-| `/api/contenttypes`      | `GET`     | &cross;                     | `contenttype`                | Return all content types present in the `contenttypes` collection. |
-|                          | `POST`    | &check; (admin)             | `contenttype`                | Create a new content type.<br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`.   |
-| `/api/contenttypes/:id`  | `GET`     | &cross;                     | `contenttype`                | Return content type with id `:id`.   |
-|                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content type with id `:id`.   |
-| `/api/:content`          | `GET`     | &cross;                     | `content`                    | Return content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.<br> For the previous example: `content` has to be set to `events`.   |
-|                          | `POST`    | &check; (admin)             | `content`                    | Create a new content entry of the content type, where `content` is the corresponding collection.<br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
-| `/api/:content/:id`      | `PATCH`   | &check; (admin)             | `result`                     | Update content entry with id `id` of the content type, where `content` is the corresponding collection.  |
-|                          | `DELETE`  | &check; (admin)             | `result`                     | Delete content entry with id `id` of the content type, where `content` is the corresponding collection.   |
+| `/api/auth/login`        | `POST`    | &cross;                     | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
+| `/api/role`              | `GET`     | &check;                     | `role`                       | Returns all existing roles. |
+|                          | `POST`    | &check; (admin)             | `role`                       | Creates a new Role. |
+| `/api/role/:id`          | `PATCH`   | &check; (admin)             | `result`                     | Updates role with id `id`. |
+|                          | `DELETE`  | &check; (admin)             | `result`                     | Deletes role with id `id`. Also removes references to this role in user and content type documents.  |
+| `/api/user`              | `GET`     | &check;                     | `user`                       | Return users present in the `users` collection. |
+|                          | `POST`    | &cross;                     | `token`, `user`              | Creates a new user.<br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user. |
+| `/api/user/:id`          | `PATCH`   | &check;                     | `result`                     | Updates user with id `id`. <br> If you want to update `role`, you have to be authenticated with a admin-user. |
+|                          | `DELETE`  | &check;                     | `result`                     | Deletes user with id `id`.<br> Specify user´s password in the request body. |
+| `/api/contenttypes`      | `GET`     | &cross;                     | `contenttype`                | Returns all content types present in the `contenttypes` collection. |
+|                          | `POST`    | &check; (admin)             | `contenttype`                | Creates a new content type.<br> Specify the following attributes in the request body: `typename`, `collection`, `field_schema`. |
+| `/api/contenttypes/:id`  | `GET`     | &cross;                     | `contenttype`                | Returns content type with id `:id`. |
+|                          | `PATCH`   | &check; (admin)             | `result`                     | Updates content type with id `:id`. |
+|                          | `DELETE`  | &check; (admin)             | `result`                     | Deletes content type with id `:id`. **Watch out: Also deletes all content entries with this content type.** |
+| `/api/:content`          | `GET`     | &cross;                     | `content`                    | Returns content entries of the content type, where `content` is the corresponding collection. By convention this should be plural of the `typename`.<br> For the previous example: `content` has to be set to `events`. |
+|                          | `POST`    | &check; (admin)             | `content`                    | Creates a new content entry of the content type, where `content` is the corresponding collection.<br> Specify the following attributes in the request body: `title` (string), `published`(bool), `fields`(key-value pairs: field name - field value). |
+| `/api/:content/:id`      | `PATCH`   | &check; (admin)             | `result`                     | Updates content entry with id `id` of the content type, where `content` is the corresponding collection. |
+|                          | `DELETE`  | &check; (admin)             | `result`                     | Deletes content entry with id `id` of the content type, where `content` is the corresponding collection. |
 
 <sup>*</sup> `status` and `message` are returned on every request.
 
 ## Workflows
 ### Roles
 
-The Roles *user* and *admin* are preset with weights 0 and 1000. If you delete them, they will be recreated on the next start, but the weights can be manipulated persistently. The role *user* is assigned to every user on creation.<br>
+The Roles *user* and *admin* are preset with weights 0 and 1000. If you delete them, they will be recreated on the next start, but the weights can be manipulated persistently. The role *user* is assigned to every user on creation. Weights and rolenames are unique.<br>
 Just one `GET` endpoint exists, which returns all roles. There is no use for the data of a singe role.<br>
-The `PATCH` and `DELETE` endpoints take `role` as query filter. This means only the `weight` field can be updated. Otherwise delete the old role and create a new one. Weights and rolenames are unique.<br>
 Example JSON request body:
 ```json
 // POST or PATCH
@@ -202,10 +206,9 @@ Example 6 currently only returns documents with a full match on tags like:
 ```
 
 ## TO DO
-- Edit `DELETE` handler/controller for contenttypes, so that effected content is also deleted
 - Implement Rolechecker Middelware:
     - Checks if the user has at least one role, that is listed in the Permissions Section of the contenttype for the requested method
-- Edit README with Role-Endpoints, contenttype PATCH endpoint and Permission-Management
+- Add to README: Permission-Management and Rolechecker
 - Fix Issue: Dates cannot be queried, because the `+` sign in a query string is treated as empty space. Maybe by escaping + if the parameter value is send in `""`.
 - Add idiomatic Endpoints for common getters and setters like: Set title, set username set names, set password...
 - Issue: *standard_init_linux.go:219: exec user process caused: no such file or directory* on `docker-compose up` when using the :latest image created by workflow [CI](https://github.com/D-Bald/fiber-backend/blob/main/.github/workflows/dockerhub.yml) on GitHub Actions => workflow currently disabled and a locally on an ubuntu server built image is used in the [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/ee64c31317c3ccdd0b75b9ed90117d2b09207efe/docker-compose.yaml#L50).

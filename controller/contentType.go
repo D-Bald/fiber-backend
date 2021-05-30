@@ -217,11 +217,19 @@ func DeleteContentType(id string) (*mongo.DeleteResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Drop corresponding collection
 	filter := bson.M{"_id": ctID}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
+	ct, err := GetContentType(filter)
+	if err != nil {
+		return nil, err
+	}
+	err = database.DB.Collection(ct.Collection).Drop(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Delete content type
 	return database.DB.Collection("contenttypes").DeleteOne(ctx, filter)
 }
 

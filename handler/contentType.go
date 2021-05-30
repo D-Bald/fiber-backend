@@ -47,14 +47,14 @@ func GetContentType(c *fiber.Ctx) error {
 
 // CreateContentType
 func CreateContentType(c *fiber.Ctx) error {
-	type NewContentType struct {
+	type newContentType struct {
 		TypeName    string                 `bson:"typename" json:"typename"`
 		Collection  string                 `bson:"collection" json:"collection"`
 		Permissions map[string][]string    `bson:"permissions" json:"permissions"`
 		FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema"`
 	}
 
-	ctInput := new(NewContentType)
+	ctInput := new(newContentType)
 	// Parse input
 	if err := c.BodyParser(ctInput); err != nil || ctInput.TypeName == "" || ctInput.Collection == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "contenttype": err.Error()})
@@ -100,7 +100,13 @@ func CreateContentType(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create Content Type", "contenttype": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "contenttype": ct})
+	// Return a subset of fields in readable format
+	ctOutput, err := toContentTypeOutput(&ct)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on parsing permissions", "user": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"status": "success", "message": "Created Content Type", "contenttype": ctOutput})
 }
 
 // Update content type with parameters from request body
