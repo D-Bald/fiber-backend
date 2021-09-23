@@ -1,4 +1,4 @@
-# Backend for a mini selfmade headless CMS using [Fiber](https://github.com/gofiber/fiber)
+# Mini selfmade headless CMS using [Fiber](https://github.com/gofiber/fiber)
 
 ## Content
 
@@ -26,7 +26,7 @@ Follow these steps:
     ```shell
     $ sudo wget -O .env https://raw.githubusercontent.com/D-Bald/fiber-backend/main/.env.sample
     ```
-3. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`. Also check environment variables like ports, database name, user and passwor and PLEASE change `SECRET` and `ADMIN_PASSWORD`.
+3. Set the `DB_HOST` variable in the *.env* file to the name of the docker service (in this [docker-compose.yaml](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml) the service is named `mongodb`). If you use a Atlas hosted MongoDB database, set this variable to `ATLAS`. Also check environment variables like ports, database name, user and password and PLEASE change `SECRET` and `ADMIN_PASSWORD`.
 4. Download [docker-compose.yaml file](https://github.com/D-Bald/fiber-backend/blob/master/docker-compose.yaml)
     ```shell
     $ sudo wget -O docker-compose.yaml https://raw.githubusercontent.com/D-Bald/fiber-backend/main/docker-compose.yaml
@@ -57,7 +57,7 @@ Check the database setup with [mongo-express](https://hub.docker.com/_/mongo-exp
 | `/api/auth/login`        | `POST`    | &cross;                                       | `token`, `user`              | Sign in with username or email (`identity`) and `password`. On success returns token and user. |
 | `/api/role`              | `GET`     | &check;                                       | `role`                       | Returns all existing roles. |
 |                          | `POST`    | &check; (admin)                               | `role`                       | Creates a new Role. |
-| `/api/role/:id`          | `PATCH`   | &check; (admin)                               | `result`                     | Updates role with id `id`. |
+| `/api/role/:tag`          | `PATCH`   | &check; (admin)                               | `result`                     | Updates role with id `tag`. |
 |                          | `DELETE`  | &check; (admin)                               | `result`                     | Deletes role with id `id`. Also removes references to this role in user and content type documents.  |
 | `/api/user`              | `GET`     | &check;                                       | `user`                       | Return users present in the `users` collection. |
 |                          | `POST`    | &cross;                                       | `token`, `user`              | Creates a new user.<br> Specify the following attributes in the request body: `username`, `email`, `password`, `names`. On success returns token and user. |
@@ -89,15 +89,15 @@ Two roles are initiated out of the box:
     "name":"Administrator"
 }
 ```
-The *default* role is given any new user. The *admin* role is used as general access role and on start a new *adminUser* is created, if no other user with role tag *admin* is found. By changing the `name` you can decide how an admin is called and which default role is given any new user.<br>
-**Warning:** Removing these roles or changing the tag causes trouble because user creation will fail due to missing default role and you can loose your last admin access user. On the next start a new *admin* role and *adminUser* is created, but this leads to a redundant *adminUser* and you can not reliably login with real a admin access. This issue can be solved by deleting the *adminUser* that has not the *admin* role, but it can be hard to debug.
+Roles are identified by the `tag` and represented by the `name` field, hence the `name` can be changed, whereas the `tag` is fixed.<br>
+The *default* role is given any new user. The *admin* role is used as general access role and on start a new *adminUser* is created, if no other user with role tag *admin* is found. By changing the `name` of the roles you can decide how an admin is called and which default role is given any new user.<br>
+**Warning:** Removing these roles or changing the `tag` value causes trouble because user creation will fail due to missing default role and you can loose your last admin access user. On the next start a new *admin* role and *adminUser* is created, but this leads to a redundant *adminUser* and you can not reliably login with real a admin access. This issue can be solved by deleting the *adminUser* that has not the new *admin* role, but it can be hard to debug.
 
-Just one `GET` endpoint exists, which returns all roles. There is no use for the data of a singe role.<br>
+Just one `GET` endpoint exists, which returns all roles. There is no use for the data of a singe role. For the `PATCH` endpoint the `tag` has to be passed in the URL.<br>
 Example JSON request body:
 ```json
 // POST or PATCH
 {
-    "tag":"moderator",
     "Name":"Moderator"
 }
 ```
@@ -111,6 +111,7 @@ The `GET` Endpoint is not protected by any middleware. `POST`, `PATCH` and `DELE
 
 The last attribute for a new **content type**, *field_schema*, is a list of key-value pairs specifying name and type of fields, that an content entry of this content type should have.<br>
 Exapmle JSON request body:
+**REFACTOR: PERMISSIONS CONTAINS THE ROLE WITH TAG AND NAME NOW!**
 ```json
 {
     "typename": "protected-admin-test",
@@ -187,6 +188,7 @@ Example JSON request body:
 A user can edit the own data i.e. *username*, *email*, *password*, *names*.
 Every user with role *admin* can edit any other user and particularly can edit the field *role* of any user. Roles must be updated as array containing all roles as single strings.<br>
 Example JSON request body:
+**REFACTOR: PERMISSIONS CONTAINS THE ROLE WITH TAG AND NAME NOW!**
 ```json
 {
     "username": "John Doe",

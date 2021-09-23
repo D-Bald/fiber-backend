@@ -7,7 +7,6 @@ import (
 	"github.com/D-Bald/fiber-backend/database"
 	"github.com/D-Bald/fiber-backend/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -52,6 +51,11 @@ func GetRoles(filter interface{}) ([]*model.Role, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	// Convert empty filter to empty bson.object
+	if filter == nil {
+		filter = bson.M{}
+	}
 
 	cursor, err := database.DB.Collection("roles").Find(ctx, filter)
 	if err != nil {
@@ -104,21 +108,8 @@ func GetRoleByTag(tag string) (*model.Role, error) {
 	return GetRole(filter)
 }
 
-// Returns the role Object with provided ID
-func GetRoleById(id string) (*model.Role, error) {
-	rID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-	filter := bson.M{"_id": rID}
-	return GetRole(filter)
-}
-
 // Insert role with provided Parameters in DB
 func CreateRole(r *model.Role) (*mongo.InsertOneResult, error) {
-	// Initialize metadata
-	r.Init()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -126,12 +117,8 @@ func CreateRole(r *model.Role) (*mongo.InsertOneResult, error) {
 }
 
 // Update role with provided parameters
-func UpdateRole(id string, input *model.Role) (*mongo.UpdateResult, error) {
-	rID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return new(mongo.UpdateResult), err
-	}
-	filter := bson.M{"_id": rID}
+func UpdateRole(tag string, input *model.Role) (*mongo.UpdateResult, error) {
+	filter := bson.M{"tag": tag}
 	update := bson.D{
 		{Key: "$set", Value: *input},
 		{Key: "$currentDate", Value: bson.M{
@@ -146,26 +133,15 @@ func UpdateRole(id string, input *model.Role) (*mongo.UpdateResult, error) {
 }
 
 // Delete role with provided filter in DB
-func DeleteRole(id string) (*mongo.DeleteResult, error) {
-	rID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get role properties
-	filter := bson.M{"_id": rID}
-	role, err := GetRole(filter)
-	if err != nil {
-		return nil, err
-	}
+func DeleteRole(tag string) (*mongo.DeleteResult, error) {
 	// Delete role from all users whose `roles` field contain it
-	users, err := GetUsers(bson.M{"roles": role.ID})
+	users, err := GetUsers(bson.M{"roles": tag})
 	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, err
 	}
 	if err != mongo.ErrNoDocuments {
 		for _, u := range users {
-			DeleteRoleFromUser(rID, u)
+			DeleteRoleFromUser(tag, u)
 		}
 	}
 	// Delete role from all content type permissions. It is possible, that one ore more permission have no roles left after.
@@ -173,34 +149,43 @@ func DeleteRole(id string) (*mongo.DeleteResult, error) {
 	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, err
 	}
-	for _, u := range allContentTypes {
-		DeleteRoleFromPermissions(rID, u)
+	for _, ct := range allContentTypes {
+		DeleteRoleFromPermissions(tag, ct)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	filter := bson.M{"tag": tag}
 	return database.DB.Collection("roles").DeleteOne(ctx, filter)
 }
 
 // Return true if the a role with given string role name exists
-func IsValidRole(role string) bool {
-	if _, err := GetRoleByName(role); err != nil {
+func IsValidRole(role model.Role) bool {
+	if _, err := GetRoleByTag(role.Tag); err != nil {
 		return false
 	} else {
 		return true
 	}
 }
 
-// Returns slice of role names of provided role ObjectsIDs
-func GetRoleNames(roleIDs []primitive.ObjectID) ([]string, error) {
+// Returns slice of role names of provided role tags
+func GetRoleNamesByTag(roleTags []string) ([]string, error) {
 	var output []string
-	for _, r := range roleIDs {
-		rObj, err := GetRoleById(r.Hex())
+	for _, tag := range roleTags {
+		rObj, err := GetRoleByTag(tag)
 		if err != nil {
 			return nil, err
 		}
 		output = append(output, rObj.Name)
 	}
 	return output, nil
+}
+
+func GetRoleTagsFromRoleSlice(roles []model.Role) []string {
+	roleTags := make([]string, 0)
+	for _, r := range roles {
+		roleTags = append(roleTags, r.Tag)
+	}
+	return roleTags
 }

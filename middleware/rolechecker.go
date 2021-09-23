@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/D-Bald/fiber-backend/controller"
+	"github.com/D-Bald/fiber-backend/model"
 	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,8 +18,8 @@ func ApplyPermissions(c *fiber.Ctx) error {
 	}
 	ct, _ := controller.GetContentTypeByCollection(c.Params("content")) // Error check obsolet, because IsValidContentCollection is called before.
 	roles := ct.Permissions[c.Method()]
-	for _, rID := range roles {
-		if hasRole(rID.Hex(), token.Claims.(jwt.MapClaims)["roles"].([]interface{})) {
+	for _, r := range roles {
+		if hasRole(r, token.Claims.(jwt.MapClaims)["roles"].([]model.Role)) {
 			return c.Next()
 		}
 	}
@@ -26,10 +27,10 @@ func ApplyPermissions(c *fiber.Ctx) error {
 		JSON(fiber.Map{"status": "error", "message": "Action not allowed", "data": nil})
 }
 
-// return true, if a slice of roles contain the requested role ID (as in the jwt claims)
-func hasRole(rID string, roles []interface{}) bool {
-	for _, elem := range roles {
-		if elem == rID {
+// return true, if a slice of roles contain the requested role tag (as in the jwt claims)
+func hasRole(queryRole model.Role, roles []model.Role) bool {
+	for _, role := range roles {
+		if role.Tag == queryRole.Tag {
 			return true
 		}
 	}

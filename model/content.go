@@ -2,25 +2,22 @@ package model
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Content   struct
 type Content struct {
-	ID            primitive.ObjectID     `bson:"_id" json:"_id" xml:"_id" form:"_id" query:"_id"`
+	ID            string                 `bson:"_id" json:"_id" xml:"_id" form:"_id" query:"_id"`
 	CreatedAt     time.Time              `bson:"created_at" json:"created_at" xml:"created_at" form:"created_at" query:"created_at"`
 	UpdatedAt     time.Time              `bson:"updated_at" json:"updated_at" xml:"updated_at" form:"updated_at" query:"updated_at"`
-	ContentTypeID primitive.ObjectID     `bson:"content_type_id" json:"content_type_id" xml:"content_type_id" form:"content_type_id"`
+	ContentTypeID string                 `bson:"content_type_id" json:"content_type_id" xml:"content_type_id" form:"content_type_id"`
 	Title         string                 `bson:"title" json:"title" xml:"title" form:"title" query:"title"`
 	Published     *bool                  `bson:"published" json:"published" xml:"published" form:"published" query:"published"`
 	Tags          []string               `bson:"tags" json:"tags" xml:"tags" form:"tags" query:"tags"`
 	Fields        map[string]interface{} `bson:"fields,inline" json:"fields" xml:"fields" form:"fields" query:"fields"`
 }
 
-// Initialize metadata
+// Initialize metadata (ID is initialized by database controller)
 func (c *Content) Init(ct ContentType) {
-	c.ID = primitive.NewObjectID()
 	c.CreatedAt = time.Now()
 	c.UpdatedAt = time.Now()
 	c.ContentTypeID = ct.ID

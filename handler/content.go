@@ -6,41 +6,32 @@ import (
 	"github.com/D-Bald/fiber-backend/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Query content entries with filter provided in query params
 func GetContent(c *fiber.Ctx) error {
 	coll := c.Params("content")
-	parseObject := new(model.Content)
+	input := new(model.Content)
 
 	// parse input
-	if err := c.QueryParser(parseObject); err != nil && err.Error() != "schema: converter not found for primitive.ObjectID" {
+	if err := c.QueryParser(input); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
-	// parse ID manually because fiber's QueryParser has no converter for this type.
-	if id := string(c.Request().URI().QueryArgs().Peek("id")); id != "" {
-		cID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
-		}
-		parseObject.ID = cID
-	}
 
-	// Parse custom fields manually
+	// Parse custom fields manually, because of nested Map
 	fields, err := controller.GetCustomFields(coll) // Initialize fields map to avoid nil map error
-	parseObject.Fields = make(map[string]interface{})
+	input.Fields = make(map[string]interface{})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Custom fields not found", "data": err.Error()})
 	}
 	for f := range fields {
 		if fValue := c.Request().URI().QueryArgs().Peek(f); fValue != nil {
-			parseObject.Fields[f] = string(fValue)
+			input.Fields[f] = string(fValue)
 		}
 	}
 
 	// Make filter where slices, maps and structs are parsed inline
-	filter, err := utils.MakeQueryFilterFromStruct(parseObject)
+	filter, err := utils.MakeQueryFilterFromStruct(input)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Custom fields not found", "data": err.Error()})
 	}

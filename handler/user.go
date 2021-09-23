@@ -2,13 +2,11 @@ package handler
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +15,7 @@ import (
 
 // Query users with filter provided in query params
 func GetUsers(c *fiber.Ctx) error {
-	type userInput struct {
+	type userQueryInput struct {
 		ID        string    `bson:"_id" json:"_id" xml:"_id" form:"_id" query:"_id"`
 		CreatedAt time.Time `bson:"created_at" json:"created_at" xml:"created_at" form:"created_at" query:"created_at"`
 		UpdatedAt time.Time `bson:"updated_at" json:"updated_at" xml:"updated_at" form:"updated_at" query:"updated_at"`
@@ -27,58 +25,15 @@ func GetUsers(c *fiber.Ctx) error {
 		Names     string    `bson:"names" json:"names" xml:"names" form:"names" query:"names"`
 		Roles     []string  `bson:"roles" json:"roles" xml:"roles" form:"roles" query:"roles"`
 	}
-	parseObject := new(userInput)
+	input := new(userQueryInput)
 
 	// parse input
-	if err := c.QueryParser(parseObject); err != nil {
+	if err := c.QueryParser(input); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "data": err.Error()})
 	}
 
-	// set `nil` for empty values
-	v := reflect.ValueOf(*parseObject)
-	filter := make(map[string]interface{})
-
-	for i := 0; i < v.NumField(); i++ {
-		if !v.Field(i).IsZero() {
-			// Differentiates between different fields of the struct specified by their bson flag
-			switch v.Type().Field(i).Tag.Get("json") {
-			// Parses ID manually to ObjectID and add it to filter
-			case "_id":
-				uID, err := primitive.ObjectIDFromHex(v.Field(i).String())
-				if err != nil {
-					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
-				}
-				filter["_id"] = uID
-			// Parses roles manually to ObjectIDs and add it to filter
-			case "roles":
-				var roleObjectIDs []primitive.ObjectID
-				for _, r := range v.Field(i).Interface().([]string) {
-					rObj, err := controller.GetRoleByName(r)
-					if err != nil {
-						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Invalid ID", "data": err.Error()})
-					}
-					roleObjectIDs = append(roleObjectIDs, rObj.ID)
-				}
-				// Checks if the query slice contains only one value. If so, add this value; Add a slice otherwise
-				if len(roleObjectIDs) == 1 {
-					filter["roles"] = roleObjectIDs[0]
-				} else {
-					filter["roles"] = roleObjectIDs
-				}
-			// add any other parameter to the filter
-			default:
-				filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
-			}
-		}
-
-		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
-		if v.Type().Field(i).Type.Kind() == reflect.Bool {
-			filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
-		}
-	}
-
 	// get user from DB
-	users, err := controller.GetUsers(filter)
+	users, err := controller.GetUsers(input)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "No match found", "user": err.Error()})
 	}
@@ -86,11 +41,8 @@ func GetUsers(c *fiber.Ctx) error {
 	// Return a subset of fields in readable format
 	result := make([]userOutput, 0)
 	for _, u := range users {
-		out, err := toUserOutput(u)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on parsing user roles", "data": err.Error()})
-		}
-		result = append(result, *out)
+		userOutput := UserOutputFromUser(u)
+		result = append(result, *userOutput)
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Users found", "user": result})
@@ -118,7 +70,7 @@ func CreateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
 	}
-	user.Roles = append(user.Roles, uRole.ID)
+	user.Roles = append(user.Roles, *uRole)
 
 	// Insert in DB
 	if _, err := controller.CreateUser(user); err != nil {
@@ -130,7 +82,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
-	claims["user_id"] = user.ID.Hex()
+	claims["user_id"] = user.ID
 	claims["admin"] = false
 	claims["roles"] = user.Roles
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
@@ -141,10 +93,8 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Return a subset of fields in readable format
-	userOutput, err := toUserOutput(user)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not create user", "user": err.Error()})
-	}
+	userOutput := UserOutputFromUser(user)
+
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "token": t, "user ": userOutput})
 }
 
@@ -157,37 +107,37 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "result": nil})
 	}
 
-	uui := new(model.UserUpdate)
+	userInput := new(model.UserInput)
 
-	if err := c.BodyParser(uui); err != nil || uui == nil {
+	if err := c.BodyParser(userInput); err != nil || userInput == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
-	if uui.Username != "" {
-		if u, _ := controller.GetUserByUsername(uui.Username); u != nil {
+	if userInput.Username != "" {
+		if u, _ := controller.GetUserByUsername(userInput.Username); u != nil {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Username already taken", "result": nil})
 		}
 	}
-	if uui.Email != "" {
-		if u, _ := controller.GetUserByEmail(uui.Email); u != nil {
+	if userInput.Email != "" {
+		if u, _ := controller.GetUserByEmail(userInput.Email); u != nil {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "User with given Email already exists", "result": nil})
 		}
 	}
 
-	if uui.Roles != nil {
+	if userInput.Roles != nil {
 		// Roles can only be updated by admins
 		if !isAdminToken(token) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Admin rights required to update user roles", "result": nil})
 		}
 		// Checks, if all role are valid
-		for _, r := range uui.Roles {
+		for _, r := range userInput.Roles {
 			if !controller.IsValidRole(r) {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role not found: %s", r), "result": nil})
 			}
 		}
 	}
 
-	result, err := controller.UpdateUser(id, uui)
+	result, err := controller.UpdateUser(id, userInput)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update User", "result": err.Error()})
 	}
@@ -258,25 +208,20 @@ func checkPasswordHash(password, hash string) bool {
 
 // Fields that are returned on GET methods (password and metadata omitted)
 type userOutput struct {
-	ID       primitive.ObjectID `bson:"_id" json:"id" xml:"id" form:"id"`
-	Username string             `bson:"username" json:"username" xml:"username" form:"username"`
-	Email    string             `bson:"email" json:"email" xml:"email" form:"email"`
-	Names    string             `bson:"names" json:"names" xml:"names" form:"names"`
-	Roles    []string           `bson:"roles" json:"roles" xml:"roles" form:"roles"`
+	ID       string       `bson:"_id" json:"id" xml:"id" form:"id"`
+	Username string       `bson:"username" json:"username" xml:"username" form:"username"`
+	Email    string       `bson:"email" json:"email" xml:"email" form:"email"`
+	Names    string       `bson:"names" json:"names" xml:"names" form:"names"`
+	Roles    []model.Role `bson:"roles" json:"roles" xml:"roles" form:"roles"`
 }
 
 // Make UserOutput from User
-func toUserOutput(user *model.User) (*userOutput, error) {
-	u := new(userOutput)
-	u.ID = user.ID
-	u.Username = user.Username
-	u.Email = user.Email
-	u.Names = user.Names
-	// Parse role ObjectIDs to role name strings
-	roles, err := controller.GetRoleNames(user.Roles)
-	if err != nil {
-		return nil, err
+func UserOutputFromUser(user *model.User) *userOutput {
+	return &userOutput{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Names:    user.Names,
+		Roles:    user.Roles,
 	}
-	u.Roles = roles
-	return u, nil
 }

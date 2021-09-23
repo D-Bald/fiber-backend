@@ -5,15 +5,13 @@ import (
 
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 // GetAll query all Content Types
 func GetAllContentTypes(c *fiber.Ctx) error {
-	contentTypes, err := controller.GetContentTypes(bson.M{})
+	contentTypes, err := controller.GetContentTypes(nil)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "contenttype": err.Error()})
 	}
@@ -47,43 +45,30 @@ func GetContentType(c *fiber.Ctx) error {
 
 // CreateContentType
 func CreateContentType(c *fiber.Ctx) error {
-	type newContentType struct {
-		TypeName    string                 `bson:"typename" json:"typename"`
-		Collection  string                 `bson:"collection" json:"collection"`
-		Permissions map[string][]string    `bson:"permissions" json:"permissions"`
-		FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema"`
-	}
-
-	ctInput := new(newContentType)
+	ctInput := new(model.ContentTypeInput)
 	// Parse input
 	if err := c.BodyParser(ctInput); err != nil || ctInput.TypeName == "" || ctInput.Collection == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Review your input: 'typename' and 'collection' required", "contenttype": err.Error()})
 	}
 
 	// Check if content type already exists
-	checkTypeName, _ := controller.GetContentType(bson.M{"typename": ctInput.TypeName})
-	checkCollection, _ := controller.GetContentType(bson.M{"collection": ctInput.Collection})
-	if checkTypeName != nil || checkCollection != nil {
+	checkTypeName, _ := controller.GetContentTypeByTypeName(ctInput.TypeName)
+	if checkTypeName != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "contenttype": nil})
 	}
+	checkCollection, _ := controller.GetContentTypeByCollection(ctInput.Collection)
+	if checkCollection != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Collection name already in use for content type: %s", checkCollection.TypeName), "contenttype": nil})
+	}
 
-	// Check if all roles are valid and parse them to Object IDs
-	permissions := make(map[string][]primitive.ObjectID)
+	// Check if all roles are valid
 	if ctInput.Permissions != nil {
-		for key, val := range ctInput.Permissions {
-			var roleObjectIDs []primitive.ObjectID
+		for _, val := range ctInput.Permissions {
 			for _, role := range val {
 				if !controller.IsValidRole(role) {
 					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role not found: %s", role), "result": nil})
-				} else {
-					rObj, err := controller.GetRoleByName(role)
-					if err != nil {
-						return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Could not create content type", "result": nil})
-					}
-					roleObjectIDs = append(roleObjectIDs, rObj.ID)
 				}
 			}
-			permissions[key] = roleObjectIDs
 		}
 	}
 
@@ -91,7 +76,7 @@ func CreateContentType(c *fiber.Ctx) error {
 	ct := model.ContentType{
 		TypeName:    ctInput.TypeName,
 		Collection:  ctInput.Collection,
-		Permissions: permissions,
+		Permissions: ctInput.Permissions,
 		FieldSchema: ctInput.FieldSchema,
 	}
 
@@ -113,29 +98,29 @@ func CreateContentType(c *fiber.Ctx) error {
 func UpdateContentType(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	ctui := new(model.ContentTypeUpdate)
+	ctInput := new(model.ContentTypeInput)
 	// Parse input
-	if err := c.BodyParser(ctui); err != nil || ctui == nil {
+	if err := c.BodyParser(ctInput); err != nil || ctInput == nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
 	}
 
 	// Checks if content type already exists
-	if ctui.TypeName != "" {
-		checkTypeName, _ := controller.GetContentType(bson.M{"typename": ctui.TypeName})
+	if ctInput.TypeName != "" {
+		checkTypeName, _ := controller.GetContentTypeByTypeName(ctInput.TypeName)
 		if checkTypeName != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "contenttype": nil})
 		}
 	}
-	if ctui.Collection != "" {
-		checkCollection, _ := controller.GetContentType(bson.M{"collection": ctui.Collection})
+	if ctInput.Collection != "" {
+		checkCollection, _ := controller.GetContentTypeByCollection(ctInput.Collection)
 		if checkCollection != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Content Type already exists", "contenttype": nil})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Collection name already in use for content type: %s", checkCollection.TypeName), "contenttype": nil})
 		}
 	}
 
 	// Checks, if all role are valid
-	if ctui.Permissions != nil {
-		for _, val := range ctui.Permissions {
+	if ctInput.Permissions != nil {
+		for _, val := range ctInput.Permissions {
 			for _, role := range val {
 				if !controller.IsValidRole(role) {
 					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role not found: %s", role), "result": nil})
@@ -143,7 +128,7 @@ func UpdateContentType(c *fiber.Ctx) error {
 			}
 		}
 	}
-	result, err := controller.UpdateContentType(id, ctui)
+	result, err := controller.UpdateContentType(id, ctInput)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update Content Type", "result": err.Error()})
 	}
@@ -168,31 +153,22 @@ func DeleteContentType(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Content Type successfully deleted", "result": result})
 }
 
-// Fields that are returned on GET methods (password and metadata omitted)
+// Fields that are returned on GET methods (metadata omitted)
 type contentTypeOutput struct {
-	ID          primitive.ObjectID     `bson:"_id" json:"_id" xml:"_id" form:"_id"`
-	TypeName    string                 `bson:"typename" json:"typename" xml:"typename" form:"typename"`
-	Collection  string                 `bson:"collection" json:"collection" xml:"collection" form:"collection"`
-	Permissions map[string][]string    `bson:"permissions" json:"permissions" xml:"permissions" form:"permissions"`
-	FieldSchema map[string]interface{} `bson:"field_schema" json:"field_schema" xml:"field_schema" form:"field_schema"`
+	ID          string                  `bson:"_id" json:"_id" xml:"_id" form:"_id"`
+	TypeName    string                  `bson:"typename" json:"typename" xml:"typename" form:"typename"`
+	Collection  string                  `bson:"collection" json:"collection" xml:"collection" form:"collection"`
+	Permissions map[string][]model.Role `bson:"permissions" json:"permissions" xml:"permissions" form:"permissions"`
+	FieldSchema map[string]interface{}  `bson:"field_schema" json:"field_schema" xml:"field_schema" form:"field_schema"`
 }
 
 // Make ContentTypeOutput from ContentType
 func toContentTypeOutput(contentType *model.ContentType) (*contentTypeOutput, error) {
-	ct := new(contentTypeOutput)
-	ct.ID = contentType.ID
-	ct.TypeName = contentType.TypeName
-	ct.Collection = contentType.Collection
-	// Parse role ObjectIDs to role name strings
-	permissions := make(map[string][]string)
-	for key, val := range contentType.Permissions {
-		roles, err := controller.GetRoleNames(val)
-		if err != nil {
-			return nil, err
-		}
-		permissions[key] = roles
-	}
-	ct.Permissions = permissions
-	ct.FieldSchema = contentType.FieldSchema
-	return ct, nil
+	ctOutput := new(contentTypeOutput)
+	ctOutput.ID = contentType.ID
+	ctOutput.TypeName = contentType.TypeName
+	ctOutput.Collection = contentType.Collection
+	ctOutput.Permissions = contentType.Permissions
+	ctOutput.FieldSchema = contentType.FieldSchema
+	return ctOutput, nil
 }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/D-Bald/fiber-backend/config"
@@ -13,14 +14,32 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Content struct for Mongo Driver
+// Shadowing the ID and Permissions fields of model.User with ObjectID for ID and just the string slice of Role tags. Database Entry need not to be updated on role-update then.
+type UserMongo struct {
+	User  *model.User
+	ID    primitive.ObjectID `bson:"_id" json:"_id" xml:"_id" form:"_id"`
+	Roles []string           `bson:"roles" json:"roles" xml:"roles" form:"roles" query:"roles"`
+}
+
+// Return the User Struct and change ID to string and Permissions to roles
+func (u *UserMongo) toUser() (*model.User, error) {
+	user := u.User
+	user.ID = u.ID.Hex()
+	for _, tag := range u.Roles {
+		role, err := GetRoleByTag(tag)
+		if err != nil {
+			return nil, err
+		}
+		user.Roles = append(user.Roles, *role)
+	}
+	return user, nil
+}
+
 // Initialize Users with an admin user
 func InitAdminUser() error {
-	adminRole, err := GetRoleByTag("admin")
-	if err != nil {
-		return err
-	}
 	// Checks, if a user with a role with tag 'admin' exists, if not, create one
-	_, err = GetUser(bson.M{"roles": adminRole.ID})
+	_, err := GetUser(bson.M{"roles": "admin"})
 	if err != nil && err == mongo.ErrNoDocuments {
 		hash, err := hashPassword(config.Config("FIBER_ADMIN_PASSWORD"))
 		if err != nil {
@@ -28,13 +47,9 @@ func InitAdminUser() error {
 		}
 
 		// add admin and default roles to admin user
-		var roles []primitive.ObjectID
-		roles = append(roles, adminRole.ID)
-		if userRole, err := GetRoleByTag("default"); err != nil {
-			return err
-		} else {
-			roles = append(roles, userRole.ID)
-		}
+		var roles []string
+		roles = append(roles, "admin")
+		roles = append(roles, "default")
 
 		adminUser := bson.D{
 			{Key: "username", Value: "adminUser"},
@@ -59,51 +74,97 @@ func InitAdminUser() error {
 // Return all users from DB with provided Filter
 func GetUsers(filter interface{}) ([]*model.User, error) {
 	// A slice of tasks for storing the decoded documents
-	var users []*model.User
+	var result []*model.User
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	cursor, err := database.DB.Collection("users").Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var u model.User
-		err := cursor.Decode(&u)
+		var uMongo UserMongo
+		err := cursor.Decode(&uMongo)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
-
-		users = append(users, &u)
+		user, err := uMongo.toUser()
+		if err != nil {
+			return result, err
+		}
+		result = append(result, user)
 	}
 
 	if err := cursor.Err(); err != nil {
-		return users, err
+		return result, err
 	}
 
-	if len(users) == 0 {
-		return users, mongo.ErrNoDocuments
+	if len(result) == 0 {
+		return result, mongo.ErrNoDocuments
 	}
 
-	return users, nil
+	return result, nil
 }
 
 // Return a single user that matches the filter
-func GetUser(filter interface{}) (*model.User, error) {
-	var user *model.User
+func GetUser(input interface{}) (*model.User, error) {
+	// set `nil` for empty values
+	v := reflect.ValueOf(input)
+	filter := make(map[string]interface{})
+
+	for i := 0; i < v.NumField(); i++ {
+		if !v.Field(i).IsZero() {
+			// Differentiates between different fields of the struct specified by their json flag
+			switch v.Type().Field(i).Tag.Get("json") {
+			// Parses ID manually to ObjectID and add it to filter
+			case "_id":
+				uID, err := primitive.ObjectIDFromHex(v.Field(i).String())
+				if err != nil {
+					return nil, err
+				}
+				filter["_id"] = uID
+
+			// Parses roles manually to Tags and add it to filter
+			case "roles":
+				roleTags := GetRoleTagsFromRoleSlice(v.Field(i).Interface().([]model.Role))
+
+				// Checks if the query slice contains only one value. If so, add this value; Add a slice otherwise
+				if len(roleTags) == 1 {
+					filter["roles"] = roleTags[0]
+				} else {
+					filter["roles"] = roleTags
+				}
+			// add any other parameter to the filter
+			default:
+				filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
+			}
+		}
+
+		// Check for boolean types, because the zero value of this type `false` can be relevant for queries
+		if v.Type().Field(i).Type.Kind() == reflect.Bool {
+			filter[string(v.Type().Field(i).Tag.Get("json"))] = v.Field(i).Interface()
+		}
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := database.DB.Collection("users").FindOne(ctx, filter).Decode(&user)
+	var userMongo *UserMongo
+
+	err := database.DB.Collection("users").FindOne(ctx, filter).Decode(&userMongo)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	result, err := userMongo.toUser()
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // Return a single user that matches the id input
@@ -171,42 +232,23 @@ func CreateUser(user *model.User) (*mongo.InsertOneResult, error) {
 }
 
 // Update user with provided Parameters in DB
-func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error) {
-	// Struct similar to `UserUpdate` but with ObjectIDs of roles instead of string role names
-	type mongoUserUpdate struct {
-		Username string               `bson:"username,omitempty"`
-		Email    string               `bson:"email,omitempty"`
-		Password string               `bson:"password,omitempty"`
-		Names    string               `bson:"names,omitempty"`
-		Roles    []primitive.ObjectID `bson:"roles,omitempty"`
-	}
+func UpdateUser(id string, input *model.UserInput) (*mongo.UpdateResult, error) {
+	userMongo := new(UserMongo)
 
-	// create Object to add ObjectIDs as Roles
-	userUpdate := mongoUserUpdate{
-		Username: input.Username,
-		Email:    input.Email,
-		Password: "",
-		Names:    input.Names,
-		Roles:    make([]primitive.ObjectID, 0),
-	}
-
+	userMongo.User.Username = input.Username
+	userMongo.User.Email = input.Email
+	userMongo.User.Names = input.Names
 	// Hash the password before updating the user
 	if input.Password != "" {
 		hash, err := hashPassword(input.Password)
 		if err != nil {
 			return new(mongo.UpdateResult), err
 		}
-		userUpdate.Password = hash
+		userMongo.User.Password = hash
 	}
 
-	// Parse role name strings to role ObjectIDs
-	for _, r := range input.Roles {
-		rObj, err := GetRoleByName(r)
-		if err != nil {
-			return new(mongo.UpdateResult), err
-		}
-		userUpdate.Roles = append(userUpdate.Roles, rObj.ID)
-	}
+	// only store role tags
+	userMongo.Roles = GetRoleTagsFromRoleSlice(input.Roles)
 
 	userID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -215,7 +257,7 @@ func UpdateUser(id string, input *model.UserUpdate) (*mongo.UpdateResult, error)
 	// Update user with provided ID and sets field value for `updatet_at`
 	filter := bson.M{"_id": userID}
 	update := bson.D{
-		{Key: "$set", Value: userUpdate},
+		{Key: "$set", Value: userMongo},
 		{Key: "$currentDate", Value: bson.M{
 			"updated_at": true},
 		},
@@ -241,11 +283,11 @@ func DeleteUser(id string) (*mongo.DeleteResult, error) {
 }
 
 // Delete only one role from user.
-func DeleteRoleFromUser(rID primitive.ObjectID, user *model.User) (*mongo.UpdateResult, error) {
-	roles := make([]primitive.ObjectID, 0)
+func DeleteRoleFromUser(delRoleTag string, user *model.User) (*mongo.UpdateResult, error) {
+	roles := make([]string, 0)
 	for _, r := range user.Roles {
-		if r != rID {
-			roles = append(roles, r)
+		if r.Tag != delRoleTag {
+			roles = append(roles, r.Tag)
 		}
 	}
 	// Update user with provided ID and sets field value for `updatet_at`

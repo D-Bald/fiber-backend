@@ -5,14 +5,13 @@ import (
 
 	"github.com/D-Bald/fiber-backend/controller"
 	"github.com/D-Bald/fiber-backend/model"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 // GetAll query all Roles
 func GetRoles(c *fiber.Ctx) error {
-	result, err := controller.GetRoles(bson.M{})
+	result, err := controller.GetRoles(nil)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "role": err.Error()})
 	}
@@ -50,7 +49,7 @@ func CreateRole(c *fiber.Ctx) error {
 // lookup by: role
 // field to update: weight
 func UpdateRole(c *fiber.Ctx) error {
-	id := c.Params("id")
+	tag := c.Params("tag")
 	r := new(model.Role)
 	if err := c.BodyParser(r); err != nil || r == nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Review your input", "result": err.Error()})
@@ -67,7 +66,7 @@ func UpdateRole(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": fmt.Sprintf("Role name already in use with role tag: %s", checkRoleName.Tag), "result": nil})
 	}
 
-	result, err := controller.UpdateRole(id, r)
+	result, err := controller.UpdateRole(tag, r)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not update role", "result": err.Error()})
 	}
@@ -76,15 +75,15 @@ func UpdateRole(c *fiber.Ctx) error {
 
 // DeleteRole delete role with provided role name
 func DeleteRole(c *fiber.Ctx) error {
-	id := c.Params("id")
+	tag := c.Params("tag")
 
 	// Check if role exists
-	if _, err := controller.GetRoleById(id); err != nil {
+	if _, err := controller.GetRoleByTag(tag); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"status": "error", "message": "Role not found", "result": err.Error()})
 	}
 
 	// Delete in DB
-	result, err := controller.DeleteRole(id)
+	result, err := controller.DeleteRole(tag)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Could not delete role", "result": err.Error()})
 	}

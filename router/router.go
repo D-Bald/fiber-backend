@@ -21,8 +21,8 @@ func SetupRoutes(app *fiber.App) {
 	role := api.Group("/role")
 	role.Get("/", middleware.Protected(), handler.GetRoles)
 	role.Post("/", middleware.Protected(), middleware.AdminOnly, handler.CreateRole)
-	role.Patch("/:id", middleware.Protected(), middleware.AdminOnly, handler.UpdateRole)
-	role.Delete("/:id", middleware.Protected(), middleware.AdminOnly, handler.DeleteRole)
+	role.Patch("/:tag", middleware.Protected(), middleware.AdminOnly, handler.UpdateRole)
+	role.Delete("/:tag", middleware.Protected(), middleware.AdminOnly, handler.DeleteRole)
 
 	// Auth endpoints
 	auth := api.Group("/auth")
